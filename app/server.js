@@ -4,6 +4,17 @@ const path = require('path');
 const fastify = require('fastify')({ logger: true });
 const cron = require('node-cron');
 
+// ─── URL normalisation (fix Nginx double-slash proxy) ────────────
+// When Nginx has `location /peerdrop` + `proxy_pass http://…:6000/`
+// requests arrive as //config, //paste, //ws etc. Collapse to single /.
+fastify.addHook('onRequest', (request, reply, done) => {
+  const url = request.raw.url;
+  if (url && url.startsWith('//')) {
+    request.raw.url = url.replace(/^\/{2,}/, '/');
+  }
+  done();
+});
+
 // ─── Plugins ─────────────────────────────────────────────────────
 
 // Static files
