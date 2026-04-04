@@ -10,7 +10,7 @@
 
   let config = { allowed_expiry_days:[2,4,7], default_expiry_days:2, max_file_size:31457280 };
 
-  fetch('/config').then(r=>r.json()).then(c=>{ config=c; populateExpiry(); }).catch(()=>populateExpiry());
+  fetch('./config').then(r=>r.json()).then(c=>{ config=c; populateExpiry(); }).catch(()=>populateExpiry());
 
   function populateExpiry() {
     const sel = $('#expiry-select');
@@ -110,7 +110,7 @@
     const pw = $('#password-input').value.trim();
     if (pw) body.password = pw;
     try {
-      const res = await fetch('/paste', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const res = await fetch('./paste', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       if (!res.ok) throw new Error((await res.json()).error||'Failed');
       const data = await res.json();
       showShareResult(data.id, 'paste', data);
@@ -135,7 +135,7 @@
         xhr.upload.addEventListener('progress', e => { if(e.lengthComputable) pf.style.width = Math.round(e.loaded/e.total*100)+'%'; });
         xhr.addEventListener('load', () => { xhr.status<300 ? resolve(JSON.parse(xhr.responseText)) : reject(new Error(JSON.parse(xhr.responseText).error||'Upload failed')); });
         xhr.addEventListener('error', () => reject(new Error('Network error')));
-        xhr.open('POST','/upload'); xhr.send(fd);
+        xhr.open('POST','./upload'); xhr.send(fd);
       });
       showShareResult(data.id, 'file', data);
       selectedFile = null; fileInput.value = '';
@@ -145,7 +145,8 @@
   }
 
   function showShareResult(id, type, data) {
-    const url = `${location.origin}/${type}/${id}`;
+    const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+    const url = `${location.origin}${bp}${type}/${id}`;
     $('#share-link').value = url;
     const meta = type==='paste'
       ? `Expires in ${data.expires_in_days}d · ${data.has_password?'🔒 Protected':'🔓 Public'}`
@@ -169,7 +170,7 @@
     const pwQ = pw ? `?password=${encodeURIComponent(pw)}` : '';
     // Try paste first
     try {
-      let res = await fetch(`/paste/${id}${pwQ}`);
+      let res = await fetch(`./paste/${id}${pwQ}`);
       if (res.ok) {
         const d = await res.json();
         $('#retrieve-content').textContent = d.content;
@@ -178,7 +179,7 @@
         return;
       }
       // Try file
-      res = await fetch(`/file/${id}${pwQ}`);
+      res = await fetch(`./file/${id}${pwQ}`);
       if (!res.ok) throw new Error((await res.json()).error||'Not found');
       const disp = res.headers.get('Content-Disposition')||'';
       const m = disp.match(/filename="(.+)"/);
@@ -221,7 +222,8 @@
 
   function connectWS(room) {
     const proto = location.protocol==='https:'?'wss:':'ws:';
-    ws = new WebSocket(`${proto}//${location.host}/ws`);
+    const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+    ws = new WebSocket(`${proto}//${location.host}${bp}ws`);
     ws.onopen = () => ws.send(JSON.stringify({type:'join',room}));
     ws.onmessage = e => handleSig(JSON.parse(e.data));
     ws.onclose = () => disconnectWS(true);
@@ -241,7 +243,8 @@
   }
 
   function getInviteUrl(room) {
-    return `${location.origin}/?room=${encodeURIComponent(room)}`;
+    const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+    return `${location.origin}${bp}?room=${encodeURIComponent(room)}`;
   }
 
   async function handleSig(msg) {
