@@ -7,6 +7,7 @@
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => document.querySelectorAll(s);
   const formatSize = (b) => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
+  const escapeHtml = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   // ─── Theme Toggle ────────────────────────────────────────────
   (function initTheme() {
@@ -170,7 +171,7 @@
 
   function showShareResult(id, type, data) {
     const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
-    const url = `${location.origin}${bp}${type}/${id}`;
+    const url = `${location.origin}${bp}view/${type}/${id}`;
     $('#share-link').value = url;
     const meta = type==='paste'
       ? `Expires in ${data.expires_in_days}d · ${data.has_password?'🔒 Protected':'🔓 Public'}`
@@ -257,12 +258,12 @@
   function disconnectWS(silent) {
     if(ws){ws.close();ws=null;}
     Object.values(peers).forEach(pc=>pc.close());
-    peers={}; dataChannels={}; myPeerId=null;
+    peers={}; dataChannels={}; myPeerId=null; receivedBlobs={};
     $('#beam-connect').classList.remove('hidden');
     $('#beam-room').classList.add('hidden');
     $('#beam-active').classList.add('hidden');
     $('#beam-waiting').classList.remove('hidden');
-    $('#p2p-transfers').innerHTML = '';
+    $('#beam-history').innerHTML = '';
     if(!silent) toast('Left room','info');
   }
 
@@ -321,6 +322,8 @@
     return pc;
   }
 
+  let receivedBlobs = {};
+
   function setupDC(dc,rpid) {
     dc.binaryType='arraybuffer';
     dataChannels[rpid]=dc;
@@ -330,20 +333,23 @@
         const m=JSON.parse(e.data);
         if(m.type==='file-meta') {
           incomingFiles[m.id]={name:m.name,size:m.size,received:0,chunks:[]};
-          addTransfer(m.id,m.name,m.size,'↓');
+          addBeamFile(m.id,m.name,m.size,'↓');
         } else if(m.type==='file-end') {
           const f=incomingFiles[m.id]; if(!f) return;
-          const blob=new Blob(f.chunks); const a=document.createElement('a');
-          a.href=URL.createObjectURL(blob); a.download=f.name; a.click(); URL.revokeObjectURL(a.href);
-          updateTransfer(m.id,f.size,f.size,true);
+          const blob=new Blob(f.chunks);
+          receivedBlobs[m.id]={blob,name:f.name};
+          updateBeamFile(m.id,f.size,f.size,true);
           delete incomingFiles[m.id];
           toast(`Received: ${f.name}`,'success');
+        } else if(m.type==='text') {
+          addBeamText(m.id, m.content, '↓');
+          toast('Message received!','success');
         }
       } else {
         const aid=Object.keys(incomingFiles).pop();
         if(aid&&incomingFiles[aid]) {
           const f=incomingFiles[aid]; f.chunks.push(e.data); f.received+=e.data.byteLength;
-          updateTransfer(aid,f.received,f.size,false);
+          updateBeamFile(aid,f.received,f.size,false);
         }
       }
     };
@@ -352,7 +358,25 @@
   function showBeamActive() { $('#beam-waiting').classList.add('hidden'); $('#beam-active').classList.remove('hidden'); }
   function updatePeerCount(c) { $('#peer-count').textContent = `${c!==undefined?c:Object.keys(peers).length} peer(s)`; }
 
-  // P2P file send
+  // ─── P2P text send ──────────────────────────────────────────
+  $('#beam-send-text').addEventListener('click', () => sendBeamText());
+  $('#beam-text').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBeamText(); }
+  });
+
+  function sendBeamText() {
+    const text = $('#beam-text').value.trim();
+    if (!text) return;
+    const chs = Object.values(dataChannels).filter(dc => dc.readyState === 'open');
+    if (!chs.length) { toast('No peers connected', 'error'); return; }
+    const mid = Math.random().toString(36).slice(2, 10);
+    chs.forEach(dc => dc.send(JSON.stringify({ type: 'text', id: mid, content: text })));
+    addBeamText(mid, text, '↑');
+    $('#beam-text').value = '';
+    toast('Message sent!', 'success');
+  }
+
+  // ─── P2P file send ─────────────────────────────────────────
   const p2pDrop = $('#p2p-drop-zone');
   const p2pInput = $('#p2p-file-input');
   p2pDrop.addEventListener('click', () => p2pInput.click());
@@ -366,32 +390,68 @@
     if(!chs.length){toast('No peers connected','error');return;}
     const fid=Math.random().toString(36).slice(2,10);
     chs.forEach(dc=>dc.send(JSON.stringify({type:'file-meta',id:fid,name:file.name,size:file.size})));
-    addTransfer(fid,file.name,file.size,'↑');
+    addBeamFile(fid,file.name,file.size,'↑');
     const reader=new FileReader(); let off=0;
     reader.onload = e => {
       const chunk=e.target.result;
       chs.forEach(dc=>dc.send(chunk));
       off+=chunk.byteLength;
-      updateTransfer(fid,off,file.size,false);
+      updateBeamFile(fid,off,file.size,false);
       if(off<file.size) readSlice(off);
-      else { chs.forEach(dc=>dc.send(JSON.stringify({type:'file-end',id:fid}))); updateTransfer(fid,file.size,file.size,true); toast(`Sent: ${file.name}`,'success'); }
+      else { chs.forEach(dc=>dc.send(JSON.stringify({type:'file-end',id:fid}))); updateBeamFile(fid,file.size,file.size,true); toast(`Sent: ${file.name}`,'success'); }
     };
     function readSlice(o){reader.readAsArrayBuffer(file.slice(o,o+CHUNK));}
     readSlice(0);
   }
 
-  function addTransfer(id,name,size,dir) {
-    const el=document.createElement('div'); el.className='transfer-item'; el.id=`tr-${id}`;
-    el.innerHTML=`<span class="transfer-name">${dir} ${name}</span><span class="transfer-status">0 / ${formatSize(size)}</span><div class="transfer-progress"><div class="transfer-progress-fill" style="width:0%"></div></div>`;
-    $('#p2p-transfers').prepend(el);
+  // ─── Beam history (text + file items) ─────────────────────
+  function addBeamText(id, content, dir) {
+    const el = document.createElement('div');
+    el.className = 'beam-item beam-text-item ' + (dir === '↑' ? 'sent' : 'received');
+    el.id = `beam-${id}`;
+    el.innerHTML = `<div class="beam-item-header"><span class="beam-dir">${dir === '↑' ? '↑ Sent' : '↓ Received'}</span><span class="beam-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div class="beam-text-content">${escapeHtml(content)}</div><button class="beam-copy-btn" title="Copy text" data-copy-id="${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
+    el.querySelector('.beam-copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(content).then(() => toast('Copied!', 'success'));
+    });
+    $('#beam-history').prepend(el);
   }
 
-  function updateTransfer(id,loaded,total,done) {
-    const el=$(`#tr-${id}`); if(!el) return;
-    const pct=Math.round(loaded/total*100);
-    el.querySelector('.transfer-status').textContent = done?`✓ ${formatSize(total)}`:`${formatSize(loaded)} / ${formatSize(total)}`;
-    el.querySelector('.transfer-progress-fill').style.width=pct+'%';
-    if(done) el.classList.add('complete');
+  function addBeamFile(id, name, size, dir) {
+    const el = document.createElement('div');
+    el.className = 'beam-item beam-file-item ' + (dir === '↑' ? 'sent' : 'received');
+    el.id = `beam-${id}`;
+    el.innerHTML = `<div class="beam-item-header"><span class="beam-dir">${dir === '↑' ? '↑ Sent' : '↓ Received'}</span><span class="beam-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div class="beam-file-info"><span class="beam-file-name">📄 ${escapeHtml(name)}</span><span class="beam-file-size">${formatSize(size)}</span></div><div class="beam-file-progress"><div class="beam-file-progress-fill" style="width:0%"></div></div><span class="beam-file-status">0%</span>`;
+    if (dir === '↓') {
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'beam-copy-btn beam-dl-btn hidden';
+      dlBtn.title = 'Download';
+      dlBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+      dlBtn.addEventListener('click', () => {
+        const rb = receivedBlobs[id];
+        if (!rb) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(rb.blob); a.download = rb.name; a.click();
+        URL.revokeObjectURL(a.href);
+      });
+      el.appendChild(dlBtn);
+    }
+    $('#beam-history').prepend(el);
+  }
+
+  function updateBeamFile(id, loaded, total, done) {
+    const el = $(`#beam-${id}`); if (!el) return;
+    const pct = Math.round(loaded / total * 100);
+    const fill = el.querySelector('.beam-file-progress-fill');
+    const status = el.querySelector('.beam-file-status');
+    if (fill) fill.style.width = pct + '%';
+    if (status) status.textContent = done ? '✓ Complete' : pct + '%';
+    if (done) {
+      el.classList.add('complete');
+      const dlBtn = el.querySelector('.beam-dl-btn');
+      if (dlBtn) dlBtn.classList.remove('hidden');
+      const prog = el.querySelector('.beam-file-progress');
+      if (prog) prog.classList.add('hidden');
+    }
   }
 
   // Invite link

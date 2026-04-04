@@ -480,20 +480,81 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-/* ─── Transfers ─────────────────────────────────────────────── */
-.transfer-list { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem; }
-.transfer-item {
-  display:flex; align-items:center; gap:0.5rem;
-  padding:0.4rem 0.75rem;
-  background: var(--bg-input); border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md); animation: fadeIn .15s;
+/* ─── Beam Message Input ───────────────────────────────────── */
+.beam-msg-input {
+  display:flex; gap:0.4rem; margin-bottom:0.5rem;
+  align-items: flex-end;
 }
-.transfer-name { flex:1; font-size:0.8rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.transfer-status { font-size:0.7rem; color: var(--text-muted); }
-.transfer-progress { width:60px; height:3px; background: var(--bg-card); border-radius: var(--radius-full); overflow:hidden; }
-.transfer-progress-fill { height:100%; background: var(--gradient-primary); border-radius: var(--radius-full); transition: width 100ms linear; }
-.transfer-item.complete { border-color:rgba(52,211,153,0.3); }
-.transfer-item.complete .transfer-status { color: var(--accent-success); }
+.beam-msg-input textarea {
+  flex:1; resize:none; min-height:44px; max-height:120px;
+  font-family: var(--font-sans); font-size:0.8rem;
+}
+.beam-msg-input .btn { flex-shrink:0; height:44px; width:44px; padding:0; }
+
+/* ─── Beam History ─────────────────────────────────────────── */
+.beam-history { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.75rem; }
+.beam-item {
+  position:relative;
+  padding:0.5rem 0.75rem;
+  background: var(--bg-input); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  animation: fadeIn .2s var(--ease-out);
+}
+.beam-item.sent { border-left:3px solid var(--accent-1); }
+.beam-item.received { border-left:3px solid var(--accent-success); }
+.beam-item.complete { border-color:rgba(52,211,153,0.3); border-left-color:var(--accent-success); }
+
+.beam-item-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:0.3rem;
+}
+.beam-dir {
+  font-size:0.65rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.05em; color: var(--text-muted);
+}
+.beam-time { font-size:0.6rem; color: var(--text-muted); }
+
+/* Text items */
+.beam-text-content {
+  font-size:0.8rem; line-height:1.5;
+  white-space:pre-wrap; word-break:break-word;
+  color: var(--text-primary);
+  padding-right:2rem;
+}
+
+/* Copy / download button */
+.beam-copy-btn {
+  position:absolute; top:0.5rem; right:0.5rem;
+  background: var(--bg-input); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted); cursor:pointer;
+  width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+  transition: all .15s;
+}
+.beam-copy-btn:hover { color: var(--text-primary); border-color: var(--border-focus); }
+
+/* File items */
+.beam-file-info {
+  display:flex; align-items:center; gap:0.5rem;
+  margin-bottom:0.3rem;
+}
+.beam-file-name {
+  font-size:0.8rem; font-weight:500; flex:1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.beam-file-size { font-size:0.7rem; color: var(--text-muted); }
+.beam-file-progress {
+  height:3px; background: var(--bg-card);
+  border-radius: var(--radius-full); overflow:hidden;
+  margin-bottom:0.2rem;
+}
+.beam-file-progress-fill {
+  height:100%; background: var(--gradient-primary);
+  border-radius: var(--radius-full); transition: width 100ms linear;
+}
+.beam-file-status { font-size:0.65rem; color: var(--text-muted); }
+.beam-item.complete .beam-file-status { color: var(--accent-success); }
 
 /* ─── Toast ─────────────────────────────────────────────────── */
 #toast-container {

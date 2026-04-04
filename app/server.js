@@ -39,6 +39,21 @@ fastify.register(require('./routes/paste'));
 fastify.register(require('./routes/file'));
 fastify.register(require('./routes/ws'));
 
+// ─── Share view routes (browser-friendly UI) ────────────────────
+
+const fs = require('fs');
+const SHARE_HTML = fs.readFileSync(
+  path.join(__dirname, 'views', 'share.html'), 'utf8'
+);
+
+fastify.get('/view/paste/:id', async (req, reply) => {
+  reply.type('text/html').send(SHARE_HTML);
+});
+
+fastify.get('/view/file/:id', async (req, reply) => {
+  reply.type('text/html').send(SHARE_HTML);
+});
+
 // ─── Health check ────────────────────────────────────────────────
 
 fastify.get('/health', async () => ({ status: 'ok', uptime: process.uptime() }));

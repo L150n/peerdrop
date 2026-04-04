@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerDrop – Shared Content</title>
+  <meta name="description" content="View shared content on PeerDrop">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>(function(){var t=localStorage.getItem('peerdrop-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    :root{--bg:#f0f2f5;--card:rgba(255,255,255,0.85);--border:rgba(0,0,0,0.08);--text:#1e293b;--text2:#475569;--muted:#94a3b8;--input:rgba(0,0,0,0.04);--code:rgba(0,0,0,0.04);--shadow:0 1px 3px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.06);--accent:#818cf8;--accent2:#c084fc;--success:#10b981;--danger:#ef4444;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;color-scheme:light dark}
+    [data-theme="dark"]{--bg:#0a0a0f;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.10);--text:#e2e8f0;--text2:#94a3b8;--muted:#64748b;--input:rgba(255,255,255,0.05);--code:rgba(255,255,255,0.06);--shadow:0 1px 3px rgba(0,0,0,0.2),0 8px 32px rgba(0,0,0,0.2)}
+    @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0a0f;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.10);--text:#e2e8f0;--text2:#94a3b8;--muted:#64748b;--input:rgba(255,255,255,0.05);--code:rgba(255,255,255,0.06);--shadow:0 1px 3px rgba(0,0,0,0.2),0 8px 32px rgba(0,0,0,0.2)}}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:1rem;transition:background .3s,color .3s}
+    .wrap{width:100%;max-width:560px;animation:fadeIn .4s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .header{text-align:center;margin-bottom:1.5rem}
+    .header h1{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .header p{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:var(--shadow);backdrop-filter:blur(20px)}
+    .card-title{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
+    .card-title .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+    .card-title .icon.paste-icon{background:rgba(129,140,248,0.12)}
+    .card-title .icon.file-icon{background:rgba(192,132,252,0.12)}
+    .card-title .icon.lock-icon{background:rgba(248,113,113,0.12)}
+    .card-title .icon.error-icon{background:rgba(248,113,113,0.12)}
+    .card-title h2{font-size:1rem;font-weight:600;flex:1}
+    .card-title .badge{font-size:.65rem;padding:2px 8px;border-radius:999px;font-weight:500}
+    .badge-protected{background:rgba(248,113,113,0.1);color:var(--danger);border:1px solid rgba(248,113,113,0.2)}
+    .badge-public{background:rgba(16,185,129,0.1);color:var(--success);border:1px solid rgba(16,185,129,0.2)}
+    .content-box{background:var(--code);border:1px solid var(--border);border-radius:10px;padding:1rem;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto;margin-bottom:1rem;color:var(--text)}
+    .meta{display:flex;gap:1rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-bottom:1rem}
+    .meta span{display:flex;align-items:center;gap:4px}
+    .actions{display:flex;gap:.5rem}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem 1rem;border:none;border-radius:10px;font-family:var(--font);font-size:.8rem;font-weight:500;cursor:pointer;transition:all .2s}
+    .btn:active{transform:scale(.97)}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 12px rgba(129,140,248,0.3)}
+    .btn-primary:hover{box-shadow:0 4px 20px rgba(129,140,248,0.4);transform:translateY(-1px)}
+    .btn-secondary{background:var(--input);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--accent)}
+    .btn-full{width:100%}
+    .file-info{text-align:center;padding:1.5rem 0}
+    .file-info .file-icon-big{font-size:3rem;margin-bottom:.75rem}
+    .file-info .file-name{font-size:1rem;font-weight:600;margin-bottom:.25rem;word-break:break-all}
+    .file-info .file-size{font-size:.8rem;color:var(--muted)}
+    .pw-form{display:flex;gap:.5rem}
+    .pw-form input{flex:1;padding:.5rem .75rem;background:var(--input);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:.85rem;outline:none;transition:border-color .2s}
+    .pw-form input:focus{border-color:var(--accent)}
+    .footer{text-align:center;margin-top:1.25rem}
+    .footer a{color:var(--accent);text-decoration:none;font-size:.8rem;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    .spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error-msg{color:var(--danger);font-size:.8rem;text-align:center;padding:1rem 0}
+    .hidden{display:none!important}
+    .toast{position:fixed;bottom:1rem;right:1rem;padding:.5rem .75rem;background:var(--card);border:1px solid rgba(16,185,129,0.3);border-radius:10px;font-size:.8rem;font-weight:500;box-shadow:var(--shadow);animation:toastIn .25s ease;z-index:99}
+    @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    @media(max-width:480px){.card{padding:1rem;border-radius:12px}.pw-form{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>PeerDrop</h1>
+      <p>Shared content</p>
+    </div>
+
+    <div class="card">
+      <!-- Loading -->
+      <div id="state-loading"><div class="spinner"></div></div>
+
+      <!-- Password prompt -->
+      <div id="state-password" class="hidden">
+        <div class="card-title">
+          <div class="icon lock-icon">🔒</div>
+          <h2>Password Required</h2>
+        </div>
+        <form class="pw-form" id="pw-form">
+          <input type="password" id="pw-input" placeholder="Enter password" autocomplete="off" autofocus>
+          <button type="submit" class="btn btn-primary">Unlock</button>
+        </form>
+        <p id="pw-error" class="error-msg hidden"></p>
+      </div>
+
+      <!-- Error -->
+      <div id="state-error" class="hidden">
+        <div class="card-title">
+          <div class="icon error-icon">😕</div>
+          <h2 id="error-title">Not Found</h2>
+        </div>
+        <p class="error-msg" id="error-detail">This content may have expired or doesn't exist.</p>
+      </div>
+
+      <!-- Paste content -->
+      <div id="state-paste" class="hidden">
+        <div class="card-title">
+          <div class="icon paste-icon">📝</div>
+          <h2>Shared Text</h2>
+          <span class="badge" id="paste-badge"></span>
+        </div>
+        <div class="content-box" id="paste-content"></div>
+        <div class="meta" id="paste-meta"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="copy-btn" onclick="copyContent()">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- File content -->
+      <div id="state-file" class="hidden">
+        <div class="card-title">
+          <div class="icon file-icon">📄</div>
+          <h2>Shared File</h2>
+          <span class="badge" id="file-badge"></span>
+        </div>
+        <div class="file-info">
+          <div class="file-icon-big" id="file-type-icon">📄</div>
+          <div class="file-name" id="file-name"></div>
+          <div class="file-size" id="file-size"></div>
+        </div>
+        <div class="meta" id="file-meta"></div>
+        <div class="actions">
+          <button class="btn btn-primary btn-full" id="download-btn" onclick="downloadFile()">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a id="home-link" href="/">← Share your own on PeerDrop</a>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const id = pathParts[pathParts.length - 1];
+    const type = pathParts[pathParts.length - 2]; // 'paste' or 'file'
+    const apiBase = window.location.pathname.replace('/view/', '/');
+    const homeBase = window.location.pathname.split('/view/')[0] + '/';
+
+    document.getElementById('home-link').href = homeBase;
+
+    const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
+    const fmtDate = s => { try{return new Date(s).toLocaleString()}catch(e){return s} };
+    const fileIcons = {image:'🖼️',video:'🎬',audio:'🎵',pdf:'📕',zip:'📦',text:'📄'};
+    function guessIcon(name,mime){
+      if(mime&&mime.startsWith('image'))return fileIcons.image;
+      if(mime&&mime.startsWith('video'))return fileIcons.video;
+      if(mime&&mime.startsWith('audio'))return fileIcons.audio;
+      if(mime&&mime.includes('pdf'))return fileIcons.pdf;
+      if(mime&&(mime.includes('zip')||mime.includes('archive')))return fileIcons.zip;
+      return fileIcons.text;
+    }
+
+    let storedPassword = '';
+    let fileData = null;
+
+    function show(stateId){
+      ['state-loading','state-password','state-error','state-paste','state-file'].forEach(s=>{
+        document.getElementById(s).classList.toggle('hidden',s!==stateId);
+      });
+    }
+
+    async function load(){
+      show('state-loading');
+      try{
+        if(type==='paste') await loadPaste();
+        else if(type==='file') await loadFile();
+        else showError('Invalid link','This link appears to be malformed.');
+      }catch(e){ showError('Error',e.message); }
+    }
+
+    async function loadPaste(pw){
+      const q = pw ? '?password='+encodeURIComponent(pw) : '';
+      const r = await fetch(apiBase+q, {headers:{'Accept':'application/json'}});
+      if(r.status===401){ show('state-password'); return; }
+      if(r.status===403){ show('state-password'); showPwError('Invalid password'); return; }
+      if(!r.ok){ const d=await r.json().catch(()=>({})); showError('Not Found',d.error||'This paste may have expired.'); return; }
+      const d = await r.json();
+      document.getElementById('paste-content').textContent = d.content;
+      document.getElementById('paste-badge').textContent = d.password_protected?'🔒 Protected':'🔓 Public';
+      document.getElementById('paste-badge').className = 'badge '+(d.password_protected?'badge-protected':'badge-public');
+      let meta = '';
+      if(d.views!==undefined) meta += '<span>👁 '+d.views+' views</span>';
+      if(d.created_at) meta += '<span>📅 '+fmtDate(d.created_at)+'</span>';
+      if(d.expires_at) meta += '<span>⏳ '+fmtDate(d.expires_at)+'</span>';
+      document.getElementById('paste-meta').innerHTML = meta;
+      document.title = 'PeerDrop – Shared Text';
+      show('state-paste');
+    }
+
+    async function loadFile(pw){
+      const infoUrl = apiBase+'/info';
+      const r = await fetch(infoUrl, {headers:{'Accept':'application/json'}});
+      if(!r.ok){ showError('Not Found','This file may have expired.'); return; }
+      fileData = await r.json();
+      if(fileData.password_protected && !pw){ show('state-password'); return; }
+      if(pw) storedPassword = pw;
+      document.getElementById('file-name').textContent = fileData.original_name;
+      document.getElementById('file-size').textContent = fmt(fileData.size);
+      document.getElementById('file-type-icon').textContent = guessIcon(fileData.original_name,fileData.mimetype);
+      document.getElementById('file-badge').textContent = fileData.password_protected?'🔒 Protected':'🔓 Public';
+      document.getElementById('file-badge').className = 'badge '+(fileData.password_protected?'badge-protected':'badge-public');
+      let meta = '';
+      if(fileData.created_at) meta += '<span>📅 '+fmtDate(fileData.created_at)+'</span>';
+      if(fileData.expires_at) meta += '<span>⏳ '+fmtDate(fileData.expires_at)+'</span>';
+      document.getElementById('file-meta').innerHTML = meta;
+      document.title = 'PeerDrop – '+fileData.original_name;
+      show('state-file');
+    }
+
+    function showError(title,detail){
+      document.getElementById('error-title').textContent=title;
+      document.getElementById('error-detail').textContent=detail;
+      show('state-error');
+    }
+    function showPwError(msg){
+      const el=document.getElementById('pw-error');
+      el.textContent=msg; el.classList.remove('hidden');
+    }
+
+    document.getElementById('pw-form').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const pw=document.getElementById('pw-input').value.trim();
+      if(!pw)return;
+      document.getElementById('pw-error').classList.add('hidden');
+      if(type==='paste') await loadPaste(pw);
+      else await loadFile(pw);
+    });
+
+    window.copyContent = function(){
+      const t=document.getElementById('paste-content').textContent;
+      navigator.clipboard.writeText(t).then(()=>{
+        const toast=document.createElement('div');toast.className='toast';toast.textContent='Copied!';
+        document.body.appendChild(toast);setTimeout(()=>toast.remove(),2000);
+      });
+    };
+
+    window.downloadFile = async function(){
+      const btn=document.getElementById('download-btn');
+      btn.disabled=true; btn.textContent='⏳ Downloading...';
+      try{
+        const q=storedPassword?'?password='+encodeURIComponent(storedPassword):'';
+        const r=await fetch(apiBase+q);
+        if(r.status===401||r.status===403){show('state-password');btn.disabled=false;btn.textContent='⬇ Download';return;}
+        if(!r.ok)throw new Error('Download failed');
+        const blob=await r.blob();
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=fileData?fileData.original_name:'download';
+        a.click(); URL.revokeObjectURL(a.href);
+        btn.textContent='✓ Downloaded';
+        setTimeout(()=>{btn.textContent='⬇ Download';btn.disabled=false;},2000);
+      }catch(e){btn.textContent='⬇ Download';btn.disabled=false;alert(e.message);}
+    };
+
+    load();
+  })();
+  </script>
+</body>
+</html>

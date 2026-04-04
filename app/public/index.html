@@ -181,12 +181,23 @@
 
           <!-- Active -->
           <div id="beam-active" class="hidden">
+            <!-- Text message input -->
+            <div class="beam-msg-input">
+              <textarea id="beam-text" rows="2" placeholder="Type a message to send..."></textarea>
+              <button class="btn btn-primary btn-sm" id="beam-send-text" title="Send message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+
+            <!-- File drop -->
             <div class="drop-zone drop-zone-sm" id="p2p-drop-zone">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <p>Drop file to send, or <span class="browse-text" id="p2p-browse">browse</span></p>
               <input type="file" id="p2p-file-input" hidden>
             </div>
-            <div id="p2p-transfers" class="transfer-list"></div>
+
+            <!-- Session history -->
+            <div id="beam-history" class="beam-history"></div>
           </div>
         </div>
       </div>
