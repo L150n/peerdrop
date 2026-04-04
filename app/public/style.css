@@ -465,9 +465,18 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   border-radius: var(--radius-md);
   margin-bottom:0.75rem;
 }
+.room-code-card.collapsed .room-code-value,
+.room-code-card.collapsed .room-code-hint,
+.room-code-card.collapsed .room-code-actions {
+  display: none;
+}
 .room-code-label {
   font-size:0.65rem; font-weight:600; text-transform:uppercase;
   letter-spacing:0.08em; color: var(--text-muted); margin-bottom:0.25rem;
+  cursor: pointer; transition: color 0.2s;
+}
+.room-code-label:hover {
+  color: var(--text-secondary);
 }
 .room-code-value {
   font-size:1.8rem; font-weight:700; letter-spacing:0.2em;
@@ -503,11 +512,12 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 
 /* ─── Beam Send Card ───────────────────────────────────────── */
 .beam-send-card {
-  background: var(--bg-input);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 0.75rem;
   margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-card);
 }
 .beam-divider {
   display:flex; align-items:center; gap:0.5rem;
@@ -641,4 +651,5 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   .beam-row { flex-wrap:wrap; }
   .beam-row input { min-width:0; }
   .theme-toggle { width:34px; height:34px; }
+  .room-code-btns { flex-direction:row; gap:0.5rem; }
 }

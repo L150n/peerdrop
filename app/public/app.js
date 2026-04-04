@@ -281,6 +281,10 @@
         $('#room-code-display').textContent = msg.room;
         updatePeerCount(msg.peers.length);
         makeQR($('#invite-qr'), getInviteUrl(msg.room), 100);
+        // Make room code card collapsible
+        const roomCard = $('#room-code-display').closest('.room-code-card');
+        const label = roomCard.querySelector('.room-code-label');
+        label.addEventListener('click', () => roomCard.classList.toggle('collapsed'));
         for(const rp of msg.peers) await createPC(rp,true);
         break;
       case 'peer-joined':
