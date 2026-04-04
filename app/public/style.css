@@ -455,16 +455,37 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 .beam-row { display:flex; gap:0.4rem; }
 .beam-row input { flex:1; }
 .room-header { display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.75rem; }
-.invite-row {
-  display:flex; align-items:center; gap:1rem;
-  padding:0.75rem; background: var(--bg-input);
+
+/* Room code card */
+.room-code-card {
+  text-align:center;
+  padding:0.75rem;
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   margin-bottom:0.75rem;
 }
-.invite-info { flex:1; }
-.invite-label { font-size:0.85rem; font-weight:600; color: var(--text-primary); margin-bottom:2px; }
-.invite-desc { font-size:0.75rem; color: var(--text-muted); margin-bottom:0.5rem; }
+.room-code-label {
+  font-size:0.65rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.08em; color: var(--text-muted); margin-bottom:0.25rem;
+}
+.room-code-value {
+  font-size:1.8rem; font-weight:700; letter-spacing:0.2em;
+  font-family: var(--font-mono);
+  background: var(--gradient-primary);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:0.25rem;
+}
+.room-code-hint {
+  font-size:0.7rem; color: var(--text-muted); margin-bottom:0.5rem;
+}
+.room-code-actions {
+  display:flex; align-items:center; justify-content:center; gap:0.75rem;
+  flex-wrap:wrap;
+}
+.room-code-btns {
+  display:flex; flex-direction:column; gap:0.35rem;
+}
 
 .beam-waiting {
   display:flex; flex-direction:column; align-items:center; gap:0.5rem;
@@ -480,9 +501,26 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 }
 @keyframes spin { to { transform:rotate(360deg); } }
 
+/* ─── Beam Send Card ───────────────────────────────────────── */
+.beam-send-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.beam-divider {
+  display:flex; align-items:center; gap:0.5rem;
+  margin:0.5rem 0; color: var(--text-muted); font-size:0.7rem;
+}
+.beam-divider::before, .beam-divider::after {
+  content:''; flex:1; height:1px;
+  background: var(--border-subtle);
+}
+
 /* ─── Beam Message Input ───────────────────────────────────── */
 .beam-msg-input {
-  display:flex; gap:0.4rem; margin-bottom:0.5rem;
+  display:flex; gap:0.4rem;
   align-items: flex-end;
 }
 .beam-msg-input textarea {
@@ -492,9 +530,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 .beam-msg-input .btn { flex-shrink:0; height:44px; width:44px; padding:0; }
 
 /* ─── Beam History ─────────────────────────────────────────── */
-.beam-history { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.75rem; }
+.beam-history { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem; }
 .beam-item {
-  position:relative;
   padding:0.5rem 0.75rem;
   background: var(--bg-input); border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -519,20 +556,24 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   font-size:0.8rem; line-height:1.5;
   white-space:pre-wrap; word-break:break-word;
   color: var(--text-primary);
-  padding-right:2rem;
 }
 
-/* Copy / download button */
-.beam-copy-btn {
-  position:absolute; top:0.5rem; right:0.5rem;
-  background: var(--bg-input); border: 1px solid var(--border-subtle);
+/* Action buttons row (below content) */
+.beam-item-actions {
+  display:flex; gap:0.4rem; margin-top:0.4rem;
+  padding-top:0.35rem;
+  border-top:1px solid var(--border-subtle);
+}
+.beam-action-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  background: none; border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-muted); cursor:pointer;
-  width:28px; height:28px;
-  display:flex; align-items:center; justify-content:center;
+  padding:3px 8px;
+  font-family: var(--font-sans); font-size:0.65rem; font-weight:500;
   transition: all .15s;
 }
-.beam-copy-btn:hover { color: var(--text-primary); border-color: var(--border-focus); }
+.beam-action-btn:hover { color: var(--text-primary); border-color: var(--border-focus); }
 
 /* File items */
 .beam-file-info {

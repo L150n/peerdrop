@@ -278,7 +278,7 @@
         myPeerId = msg.peerId;
         $('#beam-connect').classList.add('hidden');
         $('#beam-room').classList.remove('hidden');
-        $('#room-code-display').textContent = `Room: ${msg.room}`;
+        $('#room-code-display').textContent = msg.room;
         updatePeerCount(msg.peers.length);
         makeQR($('#invite-qr'), getInviteUrl(msg.room), 100);
         for(const rp of msg.peers) await createPC(rp,true);
@@ -360,9 +360,6 @@
 
   // ─── P2P text send ──────────────────────────────────────────
   $('#beam-send-text').addEventListener('click', () => sendBeamText());
-  $('#beam-text').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBeamText(); }
-  });
 
   function sendBeamText() {
     const text = $('#beam-text').value.trim();
@@ -409,8 +406,8 @@
     const el = document.createElement('div');
     el.className = 'beam-item beam-text-item ' + (dir === '↑' ? 'sent' : 'received');
     el.id = `beam-${id}`;
-    el.innerHTML = `<div class="beam-item-header"><span class="beam-dir">${dir === '↑' ? '↑ Sent' : '↓ Received'}</span><span class="beam-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div class="beam-text-content">${escapeHtml(content)}</div><button class="beam-copy-btn" title="Copy text" data-copy-id="${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>`;
-    el.querySelector('.beam-copy-btn').addEventListener('click', () => {
+    el.innerHTML = `<div class="beam-item-header"><span class="beam-dir">${dir === '↑' ? '↑ Sent' : '↓ Received'}</span><span class="beam-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div class="beam-text-content">${escapeHtml(content)}</div><div class="beam-item-actions"><button class="beam-action-btn" title="Copy text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>`;
+    el.querySelector('.beam-action-btn').addEventListener('click', () => {
       navigator.clipboard.writeText(content).then(() => toast('Copied!', 'success'));
     });
     $('#beam-history').prepend(el);
@@ -421,11 +418,13 @@
     el.className = 'beam-item beam-file-item ' + (dir === '↑' ? 'sent' : 'received');
     el.id = `beam-${id}`;
     el.innerHTML = `<div class="beam-item-header"><span class="beam-dir">${dir === '↑' ? '↑ Sent' : '↓ Received'}</span><span class="beam-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div class="beam-file-info"><span class="beam-file-name">📄 ${escapeHtml(name)}</span><span class="beam-file-size">${formatSize(size)}</span></div><div class="beam-file-progress"><div class="beam-file-progress-fill" style="width:0%"></div></div><span class="beam-file-status">0%</span>`;
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'beam-item-actions hidden';
     if (dir === '↓') {
       const dlBtn = document.createElement('button');
-      dlBtn.className = 'beam-copy-btn beam-dl-btn hidden';
+      dlBtn.className = 'beam-action-btn';
       dlBtn.title = 'Download';
-      dlBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+      dlBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download';
       dlBtn.addEventListener('click', () => {
         const rb = receivedBlobs[id];
         if (!rb) return;
@@ -433,8 +432,9 @@
         a.href = URL.createObjectURL(rb.blob); a.download = rb.name; a.click();
         URL.revokeObjectURL(a.href);
       });
-      el.appendChild(dlBtn);
+      actionsDiv.appendChild(dlBtn);
     }
+    el.appendChild(actionsDiv);
     $('#beam-history').prepend(el);
   }
 
@@ -447,16 +447,22 @@
     if (status) status.textContent = done ? '✓ Complete' : pct + '%';
     if (done) {
       el.classList.add('complete');
-      const dlBtn = el.querySelector('.beam-dl-btn');
-      if (dlBtn) dlBtn.classList.remove('hidden');
+      const actions = el.querySelector('.beam-item-actions');
+      if (actions) actions.classList.remove('hidden');
       const prog = el.querySelector('.beam-file-progress');
       if (prog) prog.classList.add('hidden');
     }
   }
 
-  // Invite link
+  // Copy code button
+  $('#copy-code-btn').addEventListener('click', () => {
+    const room = $('#room-code-display').textContent;
+    navigator.clipboard.writeText(room).then(() => toast('Code copied!', 'success'));
+  });
+
+  // Copy invite link
   $('#copy-invite').addEventListener('click', () => {
-    const room = $('#room-code-display').textContent.replace('Room: ','');
+    const room = $('#room-code-display').textContent;
     shareOrCopy(getInviteUrl(room), 'Join my PeerDrop room');
   });
 })();
