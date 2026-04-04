@@ -1,0 +1,27 @@
+{
+  "name": "peerdrop",
+  "version": "1.0.0",
+  "description": "Lightweight text and file sharing with P2P",
+  "main": "app/server.js",
+  "scripts": {
+    "start": "node app/server.js",
+    "dev": "node app/server.js",
+    "cleanup": "node scripts/cleanup.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^9.0.0",
+    "@fastify/websocket": "^11.2.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.0",
+    "fastify": "^5.8.4",
+    "ioredis": "^5.10.1",
+    "nanoid": "^3.3.11",
+    "node-cron": "^4.2.1"
+  }
+}
