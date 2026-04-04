@@ -38,6 +38,12 @@ fastify.register(require('./routes/ws'));
 
 fastify.get('/health', async () => ({ status: 'ok', uptime: process.uptime() }));
 
+// ─── Favicon (prevent 404) ──────────────────────────────────────
+
+fastify.get('/favicon.ico', async (req, reply) => {
+  reply.code(204).send();
+});
+
 // ─── Expiry config endpoint ─────────────────────────────────────
 
 fastify.get('/config', async () => {

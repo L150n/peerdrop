@@ -8,6 +8,30 @@
   const $$ = (s) => document.querySelectorAll(s);
   const formatSize = (b) => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
 
+  // ─── Theme Toggle ────────────────────────────────────────────
+  (function initTheme() {
+    const root = document.documentElement;
+    const saved = localStorage.getItem('peerdrop-theme');
+    if (saved) {
+      root.setAttribute('data-theme', saved);
+    }
+    // If no saved preference, the CSS handles system default via @media
+  })();
+
+  $('#theme-toggle').addEventListener('click', () => {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme');
+    // Determine current effective theme
+    let isDark;
+    if (current === 'dark') isDark = true;
+    else if (current === 'light') isDark = false;
+    else isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('peerdrop-theme', next);
+  });
+
   let config = { allowed_expiry_days:[2,4,7], default_expiry_days:2, max_file_size:31457280 };
 
   fetch('./config').then(r=>r.json()).then(c=>{ config=c; populateExpiry(); }).catch(()=>populateExpiry());
