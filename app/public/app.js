@@ -33,7 +33,15 @@
     localStorage.setItem('peerdrop-theme', next);
   });
 
-  let config = { allowed_expiry_days:[2,4,7], default_expiry_days:2, max_file_size:31457280 };
+  let config = {
+    allowed_expiry_days:[2,4,7],
+    default_expiry_days:2,
+    max_file_size:31457280,
+    ice_servers:[
+      { urls:'stun:stun.l.google.com:19302' },
+      { urls:'stun:stun1.l.google.com:19302' },
+    ],
+  };
 
   fetch('./config').then(r=>r.json()).then(c=>{ config=c; populateExpiry(); }).catch(()=>populateExpiry());
 
@@ -219,8 +227,36 @@
 
   // ─── Beam: P2P WebRTC ─────────────────────────────────────────
   let ws=null, myPeerId=null, peers={}, dataChannels={}, incomingFiles={};
-  const ICE = [{ urls:'stun:stun.l.google.com:19302' },{ urls:'stun:stun1.l.google.com:19302' }];
   const CHUNK = 16384;
+  const roomCodeCard = $('#room-code-card');
+  const roomCodeToggle = $('#room-code-toggle');
+  const roomCodeToggleText = $('#room-code-toggle-text');
+
+  function setRoomCardCollapsed(collapsed) {
+    roomCodeCard.classList.toggle('collapsed', collapsed);
+    roomCodeToggle.setAttribute('aria-expanded', String(!collapsed));
+    roomCodeToggleText.textContent = collapsed ? 'Show invite' : 'Hide invite';
+  }
+
+  function setRoomCardCollapsible(collapsible) {
+    roomCodeCard.classList.toggle('collapsible', collapsible);
+    roomCodeToggle.disabled = !collapsible;
+    if (!collapsible) setRoomCardCollapsed(false);
+  }
+
+  roomCodeToggle.addEventListener('click', () => {
+    if (!roomCodeCard.classList.contains('collapsible')) return;
+    setRoomCardCollapsed(!roomCodeCard.classList.contains('collapsed'));
+  });
+
+  $$('#beam-active [data-beam-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isText = btn.dataset.beamType === 'text';
+      $$('#beam-active [data-beam-type]').forEach(b => b.classList.toggle('active', b === btn));
+      $('#beam-send-panel-text').classList.toggle('hidden', !isText);
+      $('#beam-send-panel-file').classList.toggle('hidden', isText);
+    });
+  });
 
   // Check URL params for auto-join
   const urlParams = new URLSearchParams(location.search);
@@ -259,6 +295,7 @@
     if(ws){ws.close();ws=null;}
     Object.values(peers).forEach(pc=>pc.close());
     peers={}; dataChannels={}; myPeerId=null; receivedBlobs={};
+    setRoomCardCollapsible(false);
     $('#beam-connect').classList.remove('hidden');
     $('#beam-room').classList.add('hidden');
     $('#beam-active').classList.add('hidden');
@@ -281,22 +318,26 @@
         $('#room-code-display').textContent = msg.room;
         updatePeerCount(msg.peers.length);
         makeQR($('#invite-qr'), getInviteUrl(msg.room), 100);
-        // Make room code card collapsible
-        const roomCard = $('#room-code-display').closest('.room-code-card');
-        const label = roomCard.querySelector('.room-code-label');
-        label.addEventListener('click', () => roomCard.classList.toggle('collapsed'));
+        setRoomCardCollapsible(msg.peers.length > 0);
+        if (msg.peers.length > 0) setRoomCardCollapsed(true);
         for(const rp of msg.peers) await createPC(rp,true);
         break;
       case 'peer-joined':
         await createPC(msg.peerId,false);
         showBeamActive();
         updatePeerCount();
+        setRoomCardCollapsible(true);
+        setRoomCardCollapsed(true);
         toast('Peer connected!','success');
         break;
       case 'peer-left':
         if(peers[msg.peerId]){peers[msg.peerId].close();delete peers[msg.peerId];delete dataChannels[msg.peerId];}
         updatePeerCount();
-        if(!Object.keys(peers).length){$('#beam-active').classList.add('hidden');$('#beam-waiting').classList.remove('hidden');}
+        if(!Object.keys(peers).length){
+          $('#beam-active').classList.add('hidden');
+          $('#beam-waiting').classList.remove('hidden');
+          setRoomCardCollapsible(false);
+        }
         toast('Peer disconnected','info');
         break;
       case 'offer': {
@@ -313,7 +354,7 @@
   }
 
   async function createPC(remotePeerId,initiator) {
-    const pc = new RTCPeerConnection({iceServers:ICE});
+    const pc = new RTCPeerConnection({ iceServers: config.ice_servers || [] });
     peers[remotePeerId] = pc;
     pc.onicecandidate = e => { if(e.candidate&&ws) ws.send(JSON.stringify({type:'ice-candidate',target:remotePeerId,data:e.candidate})); };
     pc.ondatachannel = e => setupDC(e.channel,remotePeerId);

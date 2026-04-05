@@ -28,7 +28,7 @@ Lightweight, self-hosted text & file sharing with optional P2P transfer. No sign
 |----------|-------------------------------|
 | Backend  | Node.js + Fastify             |
 | Realtime | WebSocket (`@fastify/websocket`) |
-| P2P      | WebRTC (STUN only)            |
+| P2P      | WebRTC (STUN/TURN via coturn) |
 | Storage  | Redis (metadata + TTL) + Disk (files) |
 | Frontend | Vanilla HTML + CSS + JS       |
 
@@ -65,6 +65,12 @@ cp .env.example .env
 | `MAX_FILE_SIZE`       | `31457280`           | Max upload size in bytes (30MB)|
 | `ALLOWED_EXPIRY_DAYS` | `2,4,7`              | Comma-separated allowed TTLs   |
 | `DEFAULT_EXPIRY_DAYS` | `2`                  | Fallback expiry                |
+| `STUN_SERVERS`        | Google STUN pair     | Comma-separated STUN URLs      |
+| `TURN_URLS`           | auto-derived         | Optional explicit TURN URLs    |
+| `TURN_PORT`           | `3478`               | TURN port for auto-derived URL |
+| `TURN_USERNAME`       | empty                | TURN username                  |
+| `TURN_PASSWORD`       | empty                | TURN password                  |
+| `TURN_REALM`          | optional             | Override coturn realm          |
 
 ### 3. Run
 
@@ -86,7 +92,33 @@ Open [http://localhost:6000](http://localhost:6000)
 docker compose up -d --build
 ```
 
-This starts both the app and Redis. The app is available on port `6000`.
+This starts the app, Redis, and a coturn server. The app is available on port `6000`.
+
+For Beam mode on a VPS, the simplest `.env` is:
+
+```env
+TURN_PORT=3478
+TURN_USERNAME=peerdrop
+TURN_PASSWORD=replace-with-a-strong-secret
+```
+
+With that setup, PeerDrop auto-derives the TURN host from the same hostname the browser is already using to reach `/peerdrop/`. You only need `TURN_URLS` if you want to override it manually.
+
+Then start everything:
+
+```bash
+docker compose up -d --build
+```
+
+Open these ports on the VPS/firewall:
+
+- `3478/tcp`
+- `3478/udp`
+- `49160-49200/udp`
+
+This bundled setup uses plain TURN on port `3478`. If you later want `turns:` on `5349`, you’ll need to add TLS certificates to coturn separately.
+
+If you reverse-proxy PeerDrop under `/peerdrop`, see [deploy/nginx/peerdrop.conf.example](/home/zoro/playground/peerdrop/deploy/nginx/peerdrop.conf.example).
 
 To rebuild after changes:
 
@@ -185,6 +217,8 @@ GET /health     → { "status": "ok", "uptime": 123.45 }
 GET /config     → { "allowed_expiry_days": [2,4,7], ... }
 ```
 
+`GET /config` also returns the browser ICE server list used by Beam mode.
+
 ---
 
 ## Cleanup
@@ -249,7 +283,7 @@ peerdrop/
 
 ## Future Roadmap
 
-- [ ] TURN server for NAT traversal
+- [x] TURN server for NAT traversal
 - [ ] Burn-after-read mode
 - [ ] QR code sharing
 - [ ] S3/MinIO storage backend

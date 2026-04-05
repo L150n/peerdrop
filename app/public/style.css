@@ -458,35 +458,70 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 
 /* Room code card */
 .room-code-card {
-  text-align:center;
   padding:0.75rem;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   margin-bottom:0.75rem;
 }
-.room-code-card.collapsed .room-code-value,
-.room-code-card.collapsed .room-code-hint,
-.room-code-card.collapsed .room-code-actions {
+.room-code-card.collapsible .room-code-toggle {
+  cursor:pointer;
+}
+.room-code-card.collapsed .room-code-content {
   display: none;
+}
+.room-code-card.collapsed .room-code-toggle-icon {
+  transform: rotate(-90deg);
+}
+.room-code-toggle {
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.75rem;
+  padding:0;
+  border:none;
+  background:none;
+  color:inherit;
+  text-align:left;
+}
+.room-code-toggle:disabled {
+  cursor:default;
+}
+.room-code-heading {
+  flex:1;
+  min-width:0;
+  text-align:center;
 }
 .room-code-label {
   font-size:0.65rem; font-weight:600; text-transform:uppercase;
   letter-spacing:0.08em; color: var(--text-muted); margin-bottom:0.25rem;
-  cursor: pointer; transition: color 0.2s;
-}
-.room-code-label:hover {
-  color: var(--text-secondary);
 }
 .room-code-value {
   font-size:1.8rem; font-weight:700; letter-spacing:0.2em;
   font-family: var(--font-mono);
   background: var(--gradient-primary);
   -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-  margin-bottom:0.25rem;
+}
+.room-code-toggle-text {
+  font-size:0.72rem;
+  color: var(--text-muted);
+  white-space:nowrap;
+}
+.room-code-toggle-icon {
+  flex-shrink:0;
+  color: var(--text-muted);
+  transition: transform .2s ease, color .2s ease;
+}
+.room-code-card.collapsible:hover .room-code-toggle-text,
+.room-code-card.collapsible:hover .room-code-toggle-icon {
+  color: var(--text-secondary);
+}
+.room-code-content {
+  margin-top:0.5rem;
 }
 .room-code-hint {
-  font-size:0.7rem; color: var(--text-muted); margin-bottom:0.5rem;
+  font-size:0.7rem; color: var(--text-muted); margin-bottom:0.5rem; text-align:center;
 }
 .room-code-actions {
   display:flex; align-items:center; justify-content:center; gap:0.75rem;
@@ -519,13 +554,11 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   margin-bottom: 0.5rem;
   box-shadow: var(--shadow-card);
 }
-.beam-divider {
-  display:flex; align-items:center; gap:0.5rem;
-  margin:0.5rem 0; color: var(--text-muted); font-size:0.7rem;
+.beam-send-toggle {
+  margin-bottom:0.75rem;
 }
-.beam-divider::before, .beam-divider::after {
-  content:''; flex:1; height:1px;
-  background: var(--border-subtle);
+.beam-send-panels {
+  min-height:0;
 }
 
 /* ─── Beam Message Input ───────────────────────────────────── */
@@ -573,6 +606,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   display:flex; gap:0.4rem; margin-top:0.4rem;
   padding-top:0.35rem;
   border-top:1px solid var(--border-subtle);
+  justify-content:flex-end;
+  flex-wrap:wrap;
 }
 .beam-action-btn {
   display:inline-flex; align-items:center; gap:4px;
@@ -651,5 +686,41 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   .beam-row { flex-wrap:wrap; }
   .beam-row input { min-width:0; }
   .theme-toggle { width:34px; height:34px; }
-  .room-code-btns { flex-direction:row; gap:0.5rem; }
+  .room-code-toggle { align-items:flex-start; }
+  .room-code-heading { text-align:left; }
+  .room-code-value {
+    font-size:1.35rem;
+    letter-spacing:0.14em;
+    word-break:break-all;
+  }
+  .room-code-toggle-text { display:none; }
+  .room-code-actions { flex-direction:column; }
+  .room-code-btns {
+    width:100%;
+    flex-direction:column;
+    gap:0.5rem;
+  }
+  .room-code-btns .btn {
+    width:100%;
+  }
+  .beam-msg-input {
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .beam-msg-input .btn {
+    width:100%;
+    height:auto;
+    padding:0.6rem 0.75rem;
+  }
+  .beam-item-header {
+    align-items:flex-start;
+    gap:0.35rem;
+  }
+  .beam-item-actions {
+    justify-content:stretch;
+  }
+  .beam-action-btn {
+    width:100%;
+    justify-content:center;
+  }
 }

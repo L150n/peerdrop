@@ -160,21 +160,29 @@
           </div>
 
           <!-- Room code prominent display -->
-          <div class="room-code-card">
-            <p class="room-code-label">Room Code</p>
-            <div class="room-code-value" id="room-code-display"></div>
-            <p class="room-code-hint">Share this code, QR, or link to invite someone</p>
-            <div class="room-code-actions">
-              <div class="qr-wrap" id="invite-qr"></div>
-              <div class="room-code-btns">
-                <button class="btn btn-secondary btn-sm" id="copy-code-btn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  Copy Code
-                </button>
-                <button class="btn btn-secondary btn-sm" id="copy-invite">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  Copy Link
-                </button>
+          <div class="room-code-card" id="room-code-card">
+            <button class="room-code-toggle" id="room-code-toggle" type="button" aria-expanded="true" aria-controls="room-code-content">
+              <div class="room-code-heading">
+                <p class="room-code-label">Room Code</p>
+                <div class="room-code-value" id="room-code-display"></div>
+              </div>
+              <span class="room-code-toggle-text" id="room-code-toggle-text">Hide invite</span>
+              <svg class="room-code-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="room-code-content" id="room-code-content">
+              <p class="room-code-hint">Share this code, QR, or link to invite someone</p>
+              <div class="room-code-actions">
+                <div class="qr-wrap" id="invite-qr"></div>
+                <div class="room-code-btns">
+                  <button class="btn btn-secondary btn-sm" id="copy-code-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy Code
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="copy-invite">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Copy Link
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -189,17 +197,26 @@
           <div id="beam-active" class="hidden">
             <!-- Text + File card (like drop mode) -->
             <div class="beam-send-card">
-              <div class="beam-msg-input">
-                <textarea id="beam-text" rows="2" placeholder="Type a message to send..."></textarea>
-                <button class="btn btn-primary btn-sm" id="beam-send-text" title="Send message">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
+              <div class="type-toggle beam-send-toggle">
+                <button class="type-btn active" data-beam-type="text" id="beam-type-text">Text</button>
+                <button class="type-btn" data-beam-type="file" id="beam-type-file">File</button>
               </div>
-              <div class="beam-divider"><span>or send a file</span></div>
-              <div class="drop-zone drop-zone-sm" id="p2p-drop-zone">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <p>Drop file to send, or <span class="browse-text" id="p2p-browse">browse</span></p>
-                <input type="file" id="p2p-file-input" hidden>
+              <div class="beam-send-panels">
+                <div class="beam-send-panel" id="beam-send-panel-text">
+                  <div class="beam-msg-input">
+                    <textarea id="beam-text" rows="2" placeholder="Type a message to send..."></textarea>
+                    <button class="btn btn-primary btn-sm" id="beam-send-text" title="Send message">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="beam-send-panel hidden" id="beam-send-panel-file">
+                  <div class="drop-zone drop-zone-sm" id="p2p-drop-zone">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p>Drop file to send, or <span class="browse-text" id="p2p-browse">browse</span></p>
+                    <input type="file" id="p2p-file-input" hidden>
+                  </div>
+                </div>
               </div>
             </div>
 

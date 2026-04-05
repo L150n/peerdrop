@@ -9,6 +9,58 @@ const fastify = require('fastify')({
 });
 const cron = require('node-cron');
 
+function getPublicHost(req) {
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const hostHeader = forwardedHost || req.headers.host || '';
+  const rawHost = hostHeader.split(',')[0].trim();
+  if (!rawHost) return '';
+
+  const ipv6Match = rawHost.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (ipv6Match) return ipv6Match[1];
+
+  return rawHost.replace(/:\d+$/, '');
+}
+
+function parseIceServers(req) {
+  const rawIceServers = process.env.WEBRTC_ICE_SERVERS;
+  if (rawIceServers) {
+    try {
+      const parsed = JSON.parse(rawIceServers);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    } catch (err) {
+      fastify.log.warn('Invalid WEBRTC_ICE_SERVERS JSON, falling back to STUN/TURN env vars');
+    }
+  }
+
+  const stunServers = (process.env.STUN_SERVERS || 'stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  const iceServers = stunServers.map((url) => ({ urls: url }));
+
+  let turnUrls = (process.env.TURN_URLS || process.env.TURN_URL || '')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  if (!turnUrls.length && process.env.TURN_USERNAME && process.env.TURN_PASSWORD) {
+    const publicHost = getPublicHost(req);
+    const turnPort = parseInt(process.env.TURN_PORT, 10) || 3478;
+    if (publicHost) turnUrls = [`turn:${publicHost}:${turnPort}`];
+  }
+
+  if (turnUrls.length) {
+    iceServers.push({
+      urls: turnUrls,
+      username: process.env.TURN_USERNAME || '',
+      credential: process.env.TURN_PASSWORD || '',
+    });
+  }
+
+  return iceServers;
+}
+
 // ─── Plugins ─────────────────────────────────────────────────────
 
 // Static files
@@ -66,12 +118,13 @@ fastify.get('/favicon.ico', async (req, reply) => {
 
 // ─── Expiry config endpoint ─────────────────────────────────────
 
-fastify.get('/config', async () => {
+fastify.get('/config', async (req) => {
   const { getAllowedDays, getDefaultDays } = require('./utils/expiry');
   return {
     allowed_expiry_days: getAllowedDays(),
     default_expiry_days: getDefaultDays(),
     max_file_size: parseInt(process.env.MAX_FILE_SIZE, 10) || 31457280,
+    ice_servers: parseIceServers(req),
   };
 });
 
