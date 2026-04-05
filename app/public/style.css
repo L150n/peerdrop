@@ -228,6 +228,18 @@ body {
 }
 .toggle-btn.active { color: var(--text-primary); }
 .toggle-btn:hover:not(.active) { color: var(--text-secondary); }
+.mode-help {
+  margin: -0.65rem 0 1rem;
+  padding: 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.mode-help strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
 
 /* ─── Type Sub-Toggle ───────────────────────────────────────── */
 .type-toggle {
