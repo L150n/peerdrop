@@ -113,7 +113,7 @@ fastify.get('/health', async () => ({ status: 'ok', uptime: process.uptime() }))
 // ─── Favicon (prevent 404) ──────────────────────────────────────
 
 fastify.get('/favicon.ico', async (req, reply) => {
-  reply.code(204).send();
+  return reply.sendFile('peerdrop_logo.png');
 });
 
 // ─── Expiry config endpoint ─────────────────────────────────────

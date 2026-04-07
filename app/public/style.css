@@ -148,12 +148,13 @@ body {
   margin-bottom:1.25rem; animation:fadeInDown .4s var(--ease-out);
   position: relative;
 }
-.logo { display:flex; align-items:center; justify-content:center; gap:0.4rem; }
-.logo h1 {
-  font-size:1.5rem; font-weight:700;
-  background: var(--gradient-primary);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  background-clip:text;
+.logo { display:flex; align-items:center; justify-content:center; }
+.logo-image {
+  display:block;
+  width:min(280px, calc(100vw - 8rem));
+  height:auto;
+  max-height:72px;
+  object-fit:contain;
 }
 @keyframes fadeInDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
 
@@ -686,7 +687,10 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 /* ─── Responsive ────────────────────────────────────────────── */
 @media (max-width:600px) {
   #app { padding:1rem 0.75rem; }
-  .logo h1 { font-size:1.25rem; }
+  .logo-image {
+    width:min(220px, calc(100vw - 7rem));
+    max-height:56px;
+  }
   .options-row { flex-direction:column; gap:0.5rem; }
   .card { padding:1rem; border-radius: var(--radius-lg); }
   .invite-row { flex-direction:column; text-align:center; }
