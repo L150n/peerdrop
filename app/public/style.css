@@ -151,9 +151,9 @@ body {
 .logo { display:flex; align-items:center; justify-content:center; }
 .logo-image {
   display:block;
-  width:min(280px, calc(100vw - 8rem));
+  width:min(180px, calc(100vw - 10rem));
   height:auto;
-  max-height:72px;
+  max-height:46px;
   object-fit:contain;
 }
 @keyframes fadeInDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
@@ -688,8 +688,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 @media (max-width:600px) {
   #app { padding:1rem 0.75rem; }
   .logo-image {
-    width:min(220px, calc(100vw - 7rem));
-    max-height:56px;
+    width:min(150px, calc(100vw - 8rem));
+    max-height:38px;
   }
   .options-row { flex-direction:column; gap:0.5rem; }
   .card { padding:1rem; border-radius: var(--radius-lg); }
