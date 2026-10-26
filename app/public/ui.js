@@ -23,20 +23,20 @@
     cleanups.push(() => { gsap.ticker.remove(tick); lenis.destroy(); });
   }
 
-  // ─── Intro: the headline stretches out and the line draws from you to the other end.
+  // ─── Intro: the status line draws from you to the other end.
   // The inline script in <head> held these back with .intro; hand them to GSAP and let go.
   const root = document.documentElement;
   const nodeB = $('.link-node-b');
   if (root.classList.contains('intro')) {
     gsap.set('.link-track', { scaleX: 0 });
     gsap.set(nodeB, { scale: 0 });
-    gsap.set('.link-label', { opacity: 0 });
-    root.classList.remove('intro'); // CSS transition stretches the active mode name
+    gsap.set('.link-label-b', { opacity: 0 });
+    root.classList.remove('intro');
     gsap.timeline({ delay: 0.15 })
       .from('.link-node-a', { scale: 0, duration: 0.4, ease: 'back.out(3)' }, 0)
       .to('.link-track', { scaleX: 1, duration: 0.9, ease: 'power3.inOut', clearProps: 'transform' }, 0.1)
       .to(nodeB, { scale: 1, duration: 0.45, ease: 'back.out(3)', clearProps: 'transform' }, 0.85)
-      .to('.link-label', { opacity: 1, duration: 0.5, clearProps: 'opacity' }, 0.8);
+      .to('.link-label-b', { opacity: 1, duration: 0.5, clearProps: 'opacity' }, 0.8);
   }
 
   // ─── Mode switch: the new panel and lede settle in
@@ -59,14 +59,14 @@
     }
   });
 
-  // ─── "Where your things go": heading word by word, then the two columns
+  // ─── "How it works": heading word by word, then the two columns
   document.fonts.ready.then(() => {
     const title = $('[data-split]');
     if (!title) return;
     const split = SplitText.create(title, { type: 'words', mask: 'words', aria: 'auto' });
-    const tl = gsap.timeline({ scrollTrigger: { trigger: '.where', start: 'top 75%', once: true } });
+    const tl = gsap.timeline({ scrollTrigger: { trigger: '.how', start: 'top 75%', once: true } });
     tl.from(split.words, { yPercent: 110, duration: 0.8, stagger: 0.07, ease: 'power3.out' })
-      .from('.where-col', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power2.out', clearProps: 'transform,opacity' }, 0.3);
+      .from('.how-col', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power2.out', clearProps: 'transform,opacity' }, 0.3);
     cleanups.push(() => split.revert());
     ScrollTrigger.refresh();
   });

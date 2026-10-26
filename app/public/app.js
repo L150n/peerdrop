@@ -150,20 +150,18 @@
     $(`#toggle-${next}`).focus();
   });
 
-  // ─── Text / file switches ─────────────────────────────────────
-  function pickSegment(buttons, btn) {
-    buttons.forEach(b => { const on = b === btn; b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); });
-  }
-
-  const dropTypeBtns = $$('#panel-drop .type-btn');
-  dropTypeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      pickSegment(dropTypeBtns, btn);
-      const isFile = btn.dataset.type === 'file';
-      $('#input-text').classList.toggle('hidden', isFile);
-      $('#input-file').classList.toggle('hidden', !isFile);
+  // A composer accepts a dragged file anywhere on it. relatedTarget keeps the
+  // highlight from flickering while the pointer moves over the textarea inside.
+  function fileDropTarget(zone, onFile) {
+    zone.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); zone.classList.add('dragover'); } });
+    zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', e => {
+      zone.classList.remove('dragover');
+      if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+      e.preventDefault();
+      onFile(e.dataTransfer.files[0]);
     });
-  });
+  }
 
   // ─── Drop: Create & Share ─────────────────────────────────────
   let selectedFile = null;
@@ -171,10 +169,8 @@
   const dropZone = $('#drop-zone');
   const fileInput = $('#file-input');
 
-  dropZone.addEventListener('click', () => fileInput.click());
-  ['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); }));
-  ['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('dragover'); }));
-  dropZone.addEventListener('drop', e => { if(e.dataTransfer.files.length) pickFile(e.dataTransfer.files[0]); });
+  $('#drop-attach').addEventListener('click', () => fileInput.click());
+  fileDropTarget(dropZone, pickFile);
   fileInput.addEventListener('change', () => { if(fileInput.files.length) pickFile(fileInput.files[0]); });
 
   function pickFile(f) {
@@ -183,20 +179,33 @@
     $('#file-name').textContent = f.name;
     $('#file-size').textContent = formatSize(f.size);
     $('#file-preview').classList.remove('hidden');
-    dropZone.classList.add('hidden');
+    $('#input-text').classList.add('hidden');
+    $('#drop-attach span').textContent = 'Choose another file';
   }
 
-  $('#file-remove').addEventListener('click', () => {
+  function clearFile() {
     selectedFile = null; fileInput.value = '';
     $('#file-preview').classList.add('hidden');
-    dropZone.classList.remove('hidden');
-    dropZone.focus();
+    $('#input-text').classList.remove('hidden');
+    $('#drop-attach span').textContent = 'Add a file';
+  }
+
+  $('#file-remove').addEventListener('click', () => { clearFile(); $('#paste-content').focus(); });
+
+  // Password is optional, so its field only shows when asked for
+  $('#password-toggle').addEventListener('click', () => {
+    const btn = $('#password-toggle'), row = $('#password-row');
+    const open = row.classList.contains('hidden');
+    row.classList.toggle('hidden', !open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.querySelector('span').textContent = open ? 'No password' : 'Add password';
+    if (open) $('#password-input').focus();
+    else $('#password-input').value = '';
   });
 
   $('#create-btn').addEventListener('click', async () => {
-    const type = $('#panel-drop .type-btn.active').dataset.type;
-    if (type === 'text') await createPaste();
-    else await uploadFile();
+    if (selectedFile) await uploadFile();
+    else await createPaste();
   });
 
   function busy(btn, on) {
@@ -206,7 +215,7 @@
 
   async function createPaste() {
     const content = $('#paste-content').value.trim();
-    if (!content) { toast('Type or paste something first','error'); $('#paste-content').focus(); return; }
+    if (!content) { toast('Type or paste something, or add a file','error'); $('#paste-content').focus(); return; }
     const btn = $('#create-btn'); busy(btn, true);
     const body = { content, expiry_days: parseInt($('#expiry-select').value,10) };
     const pw = $('#password-input').value.trim();
@@ -223,7 +232,6 @@
   }
 
   async function uploadFile() {
-    if (!selectedFile) { toast('Choose a file first','error'); dropZone.focus(); return; }
     const btn = $('#create-btn'); busy(btn, true);
     const fd = new FormData();
     fd.append('expiry_days', $('#expiry-select').value);
@@ -248,9 +256,7 @@
         xhr.open('POST','./upload'); xhr.send(fd);
       });
       showShareResult(data.id, 'file', data);
-      selectedFile = null; fileInput.value = '';
-      $('#file-preview').classList.add('hidden');
-      dropZone.classList.remove('hidden');
+      clearFile();
     } catch(e) { toast(e.message,'error'); setLink('drop', { state:'idle', p:0, b:'Anyone with the link' }); }
     finally { busy(btn, false); }
   }
@@ -265,11 +271,20 @@
       : `${data.original_name}, ${formatSize(data.size)}. Deleted in ${days(data.expires_in_days)}. ${lock}`;
     $('#share-meta').textContent = meta;
     makeQR($('#share-qr'), url, 100);
-    $('#share-empty').classList.add('hidden');
+    $('#drop-form').classList.add('hidden');
     $('#share-result').classList.remove('hidden');
+    $('#copy-link').focus();
     setLink('drop', { state:'linked', p:1, b:'Link ready' });
     toast('Link created','success');
   }
+
+  // Back to an empty form for the next thing
+  $('#drop-again').addEventListener('click', () => {
+    $('#share-result').classList.add('hidden');
+    $('#drop-form').classList.remove('hidden');
+    setLink('drop', { state:'idle', p:0, b:'Anyone with the link' });
+    $('#paste-content').focus();
+  });
 
   $('#copy-link').addEventListener('click', () => copyText($('#share-link').value, 'Link copied'));
   $('#share-btn').addEventListener('click', () => shareOrCopy($('#share-link').value));
@@ -345,16 +360,6 @@
   roomCodeToggle.addEventListener('click', () => {
     if (!roomCodeCard.classList.contains('collapsible')) return;
     setRoomCardCollapsed(!roomCodeCard.classList.contains('collapsed'));
-  });
-
-  const beamTypeBtns = $$('#beam-active [data-beam-type]');
-  beamTypeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const isText = btn.dataset.beamType === 'text';
-      pickSegment(beamTypeBtns, btn);
-      $('#beam-send-panel-text').classList.toggle('hidden', !isText);
-      $('#beam-send-panel-file').classList.toggle('hidden', isText);
-    });
   });
 
   // Check URL params for auto-join
@@ -741,6 +746,8 @@
 
   // ─── P2P text send ──────────────────────────────────────────
   $('#beam-send-text').addEventListener('click', () => sendBeamText());
+  // Ctrl/Cmd+Enter sends; plain Enter keeps a new line
+  $('#beam-text').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendBeamText(); } });
 
   function sendBeamText() {
     const text = $('#beam-text').value.trim();
@@ -757,10 +764,8 @@
   // ─── P2P file send ─────────────────────────────────────────
   const p2pDrop = $('#p2p-drop-zone');
   const p2pInput = $('#p2p-file-input');
-  p2pDrop.addEventListener('click', () => p2pInput.click());
-  ['dragenter','dragover'].forEach(e => p2pDrop.addEventListener(e,ev=>{ev.preventDefault();p2pDrop.classList.add('dragover');}));
-  ['dragleave','drop'].forEach(e => p2pDrop.addEventListener(e,ev=>{ev.preventDefault();p2pDrop.classList.remove('dragover');}));
-  p2pDrop.addEventListener('drop', e => { if(e.dataTransfer.files.length) sendP2P(e.dataTransfer.files[0]); });
+  $('#p2p-attach').addEventListener('click', () => p2pInput.click());
+  fileDropTarget(p2pDrop, sendP2P);
   p2pInput.addEventListener('change', () => { if(p2pInput.files.length) sendP2P(p2pInput.files[0]); p2pInput.value=''; });
 
   // Files go out one at a time, so the receiver knows which file a chunk belongs to

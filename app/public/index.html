@@ -11,7 +11,6 @@
   <link rel="apple-touch-icon" href="./peerdrop_logo.png">
   <link rel="preload" href="./vendor/fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
   <script>
-    // Apply saved theme before first paint
     (function(){
       var d=document.documentElement,t=localStorage.getItem('peerdrop-theme');
       if(t)d.setAttribute('data-theme',t);
@@ -30,7 +29,7 @@
       <span class="brand-name" translate="no">PeerDrop</span>
     </a>
     <nav class="top-nav" aria-label="Page">
-      <a href="#where">Where things go</a>
+      <a href="#how">How it works</a>
       <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
         <span class="theme-icon-moon"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 22C17.5228 22 22 17.5228 22 12C22 11.5373 21.3065 11.4608 21.0672 11.8568C19.9289 13.7406 17.8615 15 15.5 15C11.9101 15 9 12.0899 9 8.5C9 6.13845 10.2594 4.07105 12.1432 2.93276C12.5392 2.69347 12.4627 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/></svg></span>
         <span class="theme-icon-sun"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M12 2V4"/><path d="M12 20V22"/><path d="M4 12L2 12"/><path d="M22 12L20 12"/><path d="M19.7778 4.22266L17.5558 6.25424"/><path d="M4.22217 4.22266L6.44418 6.25424"/><path d="M6.44434 17.5557L4.22211 19.7779"/><path d="M19.7778 19.7773L17.5558 17.5551"/></g></svg></span>
@@ -38,207 +37,179 @@
     </nav>
   </header>
 
-  <main id="tool" class="tool" tabindex="-1">
-    <h1 class="sr-only">PeerDrop: send text and files to any device</h1>
-    <!-- Mode tabs double as the headline -->
-    <div class="modes" id="mode-toggle" role="tablist" aria-label="How to send">
-      <button class="toggle-btn mode-tab active" data-mode="drop" id="toggle-drop" role="tab" aria-selected="true" aria-controls="panel-drop">Drop</button>
-      <button class="toggle-btn mode-tab" data-mode="beam" id="toggle-beam" role="tab" aria-selected="false" tabindex="-1" aria-controls="panel-beam">Beam</button>
-    </div>
-    <p class="lede lede-drop">Leave text or a file here and share the link. It's deleted after the time you pick.</p>
-    <p class="lede lede-beam">Send straight to another browser. Both of you keep this page open; nothing is stored on the server.</p>
+  <main id="tool" class="page" tabindex="-1">
+    <h1 class="hero">Send text and files to any&nbsp;device.</h1>
 
-    <!-- The link: you on the left, the other end on the right. Its state is the app's status. -->
-    <div class="link" id="link" data-state="idle" aria-hidden="true">
-      <span class="link-node link-node-a"></span>
-      <span class="link-track"><span class="link-fill"></span><span class="link-rail"><span class="link-packet"></span></span></span>
-      <span class="link-node link-node-b"></span>
-      <span class="link-label link-label-a" id="link-label-a">This device</span>
-      <span class="link-label link-label-b" id="link-label-b">Anyone with the link</span>
-    </div>
-    <p class="sr-only" id="link-status" role="status" aria-live="polite"></p>
-
-    <!-- ═══ DROP ═══ -->
-    <section id="panel-drop" class="panel active" role="tabpanel" aria-labelledby="toggle-drop">
-      <div class="col col-in">
-        <div class="seg" role="group" aria-label="What to drop">
-          <button class="type-btn active" data-type="text" id="type-text" type="button" aria-pressed="true">Text</button>
-          <button class="type-btn" data-type="file" id="type-file" type="button" aria-pressed="false">File</button>
-        </div>
-
-        <div id="input-text" class="input-area">
-          <label class="sr-only" for="paste-content">Text to share</label>
-          <textarea id="paste-content" name="content" autocomplete="off" rows="7" placeholder="Paste text, code or notes…" spellcheck="false" data-lenis-prevent></textarea>
-        </div>
-
-        <div id="input-file" class="input-area hidden">
-          <button class="drop-zone" id="drop-zone" type="button">
-            <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M8.66667 11.2426C8.20528 10.9374 7.68059 10.7184 7.11616 10.6089C6.8475 10.5567 6.56983 10.5294 6.28571 10.5294C3.91878 10.5294 2 12.4256 2 14.7647C2 17.1038 3.91878 19 6.28571 19M14.381 8.02721C14.9767 7.81911 15.6178 7.70588 16.2857 7.70588C16.9404 7.70588 17.5693 7.81468 18.1551 8.01498M7.11616 10.6089C6.88706 9.9978 6.7619 9.33687 6.7619 8.64706C6.7619 5.52827 9.32028 3 12.4762 3C15.4159 3 17.8371 5.19371 18.1551 8.01498M18.1551 8.01498C20.393 8.78024 22 10.8811 22 13.3529C22 16.0599 20.0726 18.3221 17.5 18.8722"/><path stroke-linejoin="round" d="M12 16V22M10 18L12 16L14 18"/></g></svg>
-            <span class="drop-zone-main">Drop a file here or choose one</span>
-            <span class="drop-zone-hint" id="drop-limit">Up to 30&nbsp;MB</span>
-          </button>
-          <input type="file" id="file-input" hidden>
-          <div id="file-preview" class="file-preview hidden">
-            <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M3 10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C21 4.34315 21 6.22876 21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3 19.6569 3 17.7712 3 14V10Z"/><path d="M8 10H16"/><path d="M8 14H13"/></g></svg>
-            <span id="file-name" class="file-preview-name"></span>
-            <span id="file-size" class="file-preview-size"></span>
-            <button class="icon-btn icon-btn-sm" id="file-remove" type="button" aria-label="Remove file"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.50002L9.5 14.5M9.49998 9.5L14.5 14.5"/></g></svg></button>
-          </div>
-        </div>
-
-        <div class="fields">
-          <div class="field">
-            <label for="expiry-select">Delete after</label>
-            <select id="expiry-select" name="expiry"><option value="2" selected>2 days</option><option value="4">4 days</option><option value="7">7 days</option></select>
-          </div>
-          <div class="field">
-            <label for="password-input">Password <span class="field-opt">(optional)</span></label>
-            <input type="password" id="password-input" name="password" autocomplete="new-password">
-          </div>
-        </div>
-
-        <button class="btn btn-primary btn-full" id="create-btn" type="button">
-          <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M10.0464 14C8.54044 12.4882 8.67609 9.90087 10.3494 8.22108L15.197 3.35462C16.8703 1.67483 19.4476 1.53865 20.9536 3.05046C22.4596 4.56228 22.3239 7.14956 20.6506 8.82935L18.2268 11.2626"/><path d="M13.9536 10C15.4596 11.5118 15.3239 14.0991 13.6506 15.7789L11.2268 18.2121L8.80299 20.6454C7.12969 22.3252 4.55237 22.4613 3.0464 20.9495C1.54043 19.4377 1.67609 16.8504 3.34939 15.1706L5.77323 12.7373"/></g></svg>
-          <span>Create link</span>
+    <div class="layout">
+      <!-- The two ways to send. Always visible, always look like choices. -->
+      <div class="modes" id="mode-toggle" role="tablist" aria-label="How to send">
+        <button class="mode-tab active" data-mode="drop" id="toggle-drop" type="button" role="tab" aria-selected="true" aria-controls="panel-drop">
+          <span class="mode-icon"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M8.66667 11.2426C8.20528 10.9374 7.68059 10.7184 7.11616 10.6089C6.8475 10.5567 6.56983 10.5294 6.28571 10.5294C3.91878 10.5294 2 12.4256 2 14.7647C2 17.1038 3.91878 19 6.28571 19M14.381 8.02721C14.9767 7.81911 15.6178 7.70588 16.2857 7.70588C16.9404 7.70588 17.5693 7.81468 18.1551 8.01498M7.11616 10.6089C6.88706 9.9978 6.7619 9.33687 6.7619 8.64706C6.7619 5.52827 9.32028 3 12.4762 3C15.4159 3 17.8371 5.19371 18.1551 8.01498M18.1551 8.01498C20.393 8.78024 22 10.8811 22 13.3529C22 16.0599 20.0726 18.3221 17.5 18.8722"/><path stroke-linejoin="round" d="M12 16V22M10 18L12 16L14 18"/></g></svg></span>
+          <span class="mode-name">Drop</span>
+          <span class="mode-desc">Get a link that works for a few days</span>
         </button>
-        <div class="progress hidden" id="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
-
-        <details class="retrieve" id="retrieve-details">
-          <summary>Have a code? Open it here <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9L12 15L5 9"/></svg></summary>
-          <div class="retrieve-form">
-            <div class="field">
-              <label for="retrieve-id">Code</label>
-              <input type="text" id="retrieve-id" name="code" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="field">
-              <label for="retrieve-pw">Password</label>
-              <input type="password" id="retrieve-pw" name="code-password" autocomplete="off">
-            </div>
-            <button class="btn btn-quiet" id="retrieve-btn" type="button">Open</button>
-          </div>
-          <div id="retrieve-result" class="hidden">
-            <pre id="retrieve-content" data-lenis-prevent></pre>
-          </div>
-        </details>
+        <button class="mode-tab" data-mode="beam" id="toggle-beam" type="button" role="tab" aria-selected="false" aria-controls="panel-beam" tabindex="-1">
+          <span class="mode-icon"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M5.66953 9.91436L8.73167 5.77133C10.711 3.09327 11.7007 1.75425 12.6241 2.03721C13.5474 2.32018 13.5474 3.96249 13.5474 7.24712V7.55682C13.5474 8.74151 13.5474 9.33386 13.926 9.70541L13.946 9.72466C14.3327 10.0884 14.9492 10.0884 16.1822 10.0884C18.4011 10.0884 19.5106 10.0884 19.8855 10.7613C19.8917 10.7724 19.8977 10.7837 19.9036 10.795C20.2576 11.4784 19.6152 12.3475 18.3304 14.0857L15.2683 18.2287C13.2889 20.9067 12.2992 22.2458 11.3758 21.9628C10.4525 21.6798 10.4525 20.0375 10.4525 16.7528L10.4526 16.4433C10.4526 15.2585 10.4526 14.6662 10.074 14.2946L10.054 14.2754C9.6673 13.9117 9.05079 13.9117 7.81775 13.9117C5.59888 13.9117 4.48945 13.9117 4.1145 13.2387C4.10829 13.2276 4.10225 13.2164 4.09639 13.205C3.74244 12.5217 4.3848 11.6526 5.66953 9.91436Z"/></svg></span>
+          <span class="mode-name">Beam</span>
+          <span class="mode-desc">Send live to another open browser</span>
+        </button>
       </div>
 
-      <div class="col col-out">
-        <div class="out-empty" id="share-empty">
-          <p class="out-title">Your link shows up here</p>
-          <ul class="facts">
-            <li>Anyone with the link can open it until it's deleted.</li>
-            <li>Add a password and they'll need that too.</li>
-            <li>Files are stored on this server, up to <span class="max-size">30&nbsp;MB</span>.</li>
-          </ul>
+      <section class="tool-card" aria-label="Send">
+        <!-- Status: you on the left, the other end on the right -->
+        <div class="link" id="link" data-state="idle" aria-hidden="true">
+          <span class="link-node link-node-a"></span>
+          <span class="link-label link-label-a" id="link-label-a">This device</span>
+          <span class="link-track"><span class="link-fill"></span><span class="link-rail"><span class="link-packet"></span></span></span>
+          <span class="link-label link-label-b" id="link-label-b">Anyone with the link</span>
+          <span class="link-node link-node-b"></span>
         </div>
-        <div id="share-result" class="share hidden">
-          <p class="out-title">Link ready</p>
-          <div class="share-row">
-            <label class="sr-only" for="share-link">Share link</label>
-            <input type="url" id="share-link" name="share-link" readonly>
-            <button class="icon-btn" id="copy-link" type="button" aria-label="Copy link"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z"/><path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5"/></g></svg></button>
-            <button class="icon-btn" id="share-btn" type="button" aria-label="Share link"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M19.5 5.5C19.5 6.88071 18.3807 8 17 8C15.6193 8 14.5 6.88071 14.5 5.5C14.5 4.11929 15.6193 3 17 3C18.3807 3 19.5 4.11929 19.5 5.5Z"/><path d="M17 16C15.6193 16 14.5 17.1193 14.5 18.5C14.5 19.8807 15.6193 21 17 21C18.3807 21 19.5 19.8807 19.5 18.5C19.5 17.1193 18.3807 16 17 16Z"/><path d="M7 9.5C5.61929 9.5 4.5 10.6193 4.5 12C4.5 13.3807 5.61929 14.5 7 14.5C8.38071 14.5 9.5 13.3807 9.5 12C9.5 10.6193 8.38071 9.5 7 9.5Z"/><path d="M9.09668 13.3628C11.0324 14.621 12.9681 15.8792 14.9038 17.1374"/><path d="M9.09668 10.6372C11.0324 9.379 12.9681 8.12079 14.9039 6.86258"/></g></svg></button>
-          </div>
-          <div class="share-bottom">
-            <div class="qr" id="share-qr" role="img" aria-label="QR code for the share link"></div>
-            <p class="share-meta" id="share-meta"></p>
-          </div>
-        </div>
-      </div>
-    </section>
+        <p class="sr-only" id="link-status" role="status" aria-live="polite"></p>
 
-    <!-- ═══ BEAM ═══ -->
-    <section id="panel-beam" class="panel" role="tabpanel" aria-labelledby="toggle-beam" hidden>
-      <div id="beam-connect" class="beam-connect">
-        <div class="col col-in">
-          <button class="btn btn-primary btn-full" id="create-invite" type="button">
-            <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="6" r="4"/><path stroke-linejoin="round" d="M18 14.6667V17.3333"/><path stroke-linejoin="round" d="M16.6665 16L19.3332 16"/><path d="M22 16C22 18.2091 20.2091 20 18 20C15.7909 20 14 18.2091 14 16C14 13.7909 15.7909 12 18 12C20.2091 12 22 13.7909 22 16Z"/><path d="M15.02 13.3317C14.0882 13.1178 13.0685 13 12 13C7.58172 13 4 15.0147 4 17.5C4 19.9853 4 22 12 22C17.5794 22 19.2676 21.02 19.7784 19.5839"/></g></svg>
-            <span>Start a room</span>
-          </button>
-          <form class="join" id="join-form">
-            <label for="room-input">Or join with a code</label>
-            <div class="join-row">
-              <input type="text" id="room-input" name="room" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64">
-              <button class="btn btn-quiet" id="join-room" type="submit"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path stroke-linejoin="round" d="M2.00098 11.999L16.001 11.999M12.501 14.999L16.001 11.999L12.501 8.99902"/><path d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2L16.0002 2C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8L22.0002 16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.2429 22 18.8286 22 16.0002 22H15.0002C12.1718 22 10.7576 22 9.87889 21.1213C9.11051 20.3529 9.01406 19.175 9.00195 17"/></g></svg><span>Join</span></button>
+        <!-- ═══ DROP ═══ -->
+        <div id="panel-drop" class="panel active" role="tabpanel" aria-labelledby="toggle-drop">
+          <div id="drop-form" class="stack">
+            <div class="composer" id="drop-zone">
+              <div id="input-text">
+                <label class="sr-only" for="paste-content">Text to share</label>
+                <textarea id="paste-content" name="content" autocomplete="off" rows="5" placeholder="Type or paste text…" data-lenis-prevent></textarea>
+              </div>
+              <div id="file-preview" class="file-chip hidden">
+                <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M3 10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C21 4.34315 21 6.22876 21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3 19.6569 3 17.7712 3 14V10Z"/><path d="M8 10H16"/><path d="M8 14H13"/></g></svg>
+                <span class="file-chip-text"><span id="file-name" class="file-chip-name"></span><span id="file-size" class="file-chip-size"></span></span>
+                <button class="icon-btn icon-btn-sm" id="file-remove" type="button" aria-label="Remove file"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.50002L9.5 14.5M9.49998 9.5L14.5 14.5"/></g></svg></button>
+              </div>
+              <div class="composer-bar">
+                <button class="chip-btn" id="drop-attach" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M7.9175 17.8068L15.8084 10.2535C16.7558 9.34668 16.7558 7.87637 15.8084 6.96951C14.861 6.06265 13.325 6.06265 12.3776 6.96951L4.54387 14.4681C2.74382 16.1911 2.74382 18.9847 4.54387 20.7077C6.34391 22.4308 9.26237 22.4308 11.0624 20.7077L19.0105 13.0997C21.6632 10.5605 21.6632 6.44362 19.0105 3.90441C16.3578 1.3652 12.0569 1.3652 9.40419 3.90441L3 10.0346"/></svg><span>Add a file</span></button>
+                <span class="composer-hint" id="drop-limit">Up to 30&nbsp;MB</span>
+              </div>
+              <input type="file" id="file-input" hidden>
+              <p class="drop-overlay" aria-hidden="true">Drop the file to add it</p>
             </div>
-          </form>
-        </div>
-        <div class="col col-out">
-          <p class="out-title">Your room code shows up here</p>
-          <ul class="facts">
-            <li>You get a room code, a link and a QR code to share.</li>
-            <li>Text and files go straight between the two browsers, encrypted.</li>
-            <li>No upload limit. Received files stay in memory until you save them.</li>
-          </ul>
-        </div>
-      </div>
 
-      <div id="beam-room" class="beam-room hidden">
-        <div class="col col-in">
-          <div class="room-bar">
-            <span class="status badge-success" id="beam-status">Connected</span>
-            <span class="status-count" id="peer-count">0 peers</span>
-            <button class="btn btn-quiet btn-sm" id="leave-room" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2L16.0002 2C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8L22.0002 16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.2429 22 18.8286 22 16.0002 22H15.0002C12.1718 22 10.7576 22 9.87889 21.1213C9.11051 20.3529 9.01406 19.175 9.00195 17"/><path stroke-linejoin="round" d="M15 12L2 12M5.5 15L2 12L5.5 9"/></g></svg><span>Leave room</span></button>
+            <div class="options">
+              <label class="inline-field" for="expiry-select">
+                <span>Delete after</span>
+                <select id="expiry-select" name="expiry"><option value="2" selected>2 days</option><option value="4">4 days</option><option value="7">7 days</option></select>
+              </label>
+              <button class="chip-btn" id="password-toggle" type="button" aria-expanded="false" aria-controls="password-row"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M2 16C2 13.1716 2 11.7574 2.87868 10.8787C3.75736 10 5.17157 10 8 10H16C18.8284 10 20.2426 10 21.1213 10.8787C22 11.7574 22 13.1716 22 16C22 18.8284 22 20.2426 21.1213 21.1213C20.2426 22 18.8284 22 16 22H8C5.17157 22 3.75736 22 2.87868 21.1213C2 20.2426 2 18.8284 2 16Z"/><path d="M12 14V18"/><path d="M6 10V8C6 4.68629 8.68629 2 12 2C15.3137 2 18 4.68629 18 8V10"/></g></svg><span>Add password</span></button>
+            </div>
+            <div class="field hidden" id="password-row">
+              <label for="password-input">Password</label>
+              <input type="password" id="password-input" name="password" autocomplete="new-password">
+            </div>
+
+            <button class="btn btn-primary btn-full" id="create-btn" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M10.0464 14C8.54044 12.4882 8.67609 9.90087 10.3494 8.22108L15.197 3.35462C16.8703 1.67483 19.4476 1.53865 20.9536 3.05046C22.4596 4.56228 22.3239 7.14956 20.6506 8.82935L18.2268 11.2626"/><path d="M13.9536 10C15.4596 11.5118 15.3239 14.0991 13.6506 15.7789L11.2268 18.2121L8.80299 20.6454C7.12969 22.3252 4.55237 22.4613 3.0464 20.9495C1.54043 19.4377 1.67609 16.8504 3.34939 15.1706L5.77323 12.7373"/></g></svg><span>Create link</span></button>
+            <div class="progress hidden" id="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
           </div>
 
-          <div id="beam-waiting" class="beam-waiting">
-            <p id="beam-waiting-text">Waiting for someone to join. Share the code, the link or the QR code.</p>
+          <div id="share-result" class="result hidden">
+            <p class="result-title"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linejoin="round" d="M8.5 12.5L10.5 14.5L15.5 9.5"/></g></svg><span>Your link is ready</span></p>
+            <div class="share-row">
+              <label class="sr-only" for="share-link">Share link</label>
+              <input type="url" id="share-link" name="share-link" readonly>
+              <button class="icon-btn" id="copy-link" type="button" aria-label="Copy link"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z"/><path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5"/></g></svg></button>
+              <button class="icon-btn" id="share-btn" type="button" aria-label="Share link"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M19.5 5.5C19.5 6.88071 18.3807 8 17 8C15.6193 8 14.5 6.88071 14.5 5.5C14.5 4.11929 15.6193 3 17 3C18.3807 3 19.5 4.11929 19.5 5.5Z"/><path d="M17 16C15.6193 16 14.5 17.1193 14.5 18.5C14.5 19.8807 15.6193 21 17 21C18.3807 21 19.5 19.8807 19.5 18.5C19.5 17.1193 18.3807 16 17 16Z"/><path d="M7 9.5C5.61929 9.5 4.5 10.6193 4.5 12C4.5 13.3807 5.61929 14.5 7 14.5C8.38071 14.5 9.5 13.3807 9.5 12C9.5 10.6193 8.38071 9.5 7 9.5Z"/><path d="M9.09668 13.3628C11.0324 14.621 12.9681 15.8792 14.9038 17.1374"/><path d="M9.09668 10.6372C11.0324 9.379 12.9681 8.12079 14.9039 6.86258"/></g></svg></button>
+            </div>
+            <div class="share-bottom">
+              <div class="qr" id="share-qr" role="img" aria-label="QR code for the share link"></div>
+              <p class="share-meta" id="share-meta"></p>
+            </div>
+            <button class="btn btn-quiet btn-full" id="drop-again" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M15 12L12 12M12 12L9 12M12 12L12 9M12 12L12 15"/></g></svg><span>Share something else</span></button>
+          </div>
+        </div>
+
+        <!-- ═══ BEAM ═══ -->
+        <div id="panel-beam" class="panel" role="tabpanel" aria-labelledby="toggle-beam" hidden>
+          <div id="beam-connect" class="stack">
+            <p class="panel-intro">Open PeerDrop on the other device too. Start a room here, then scan the QR code or enter the code there.</p>
+            <button class="btn btn-primary btn-full" id="create-invite" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><circle cx="12" cy="6" r="4"/><path stroke-linejoin="round" d="M18 14.6667V17.3333"/><path stroke-linejoin="round" d="M16.6665 16L19.3332 16"/><path d="M22 16C22 18.2091 20.2091 20 18 20C15.7909 20 14 18.2091 14 16C14 13.7909 15.7909 12 18 12C20.2091 12 22 13.7909 22 16Z"/><path d="M15.02 13.3317C14.0882 13.1178 13.0685 13 12 13C7.58172 13 4 15.0147 4 17.5C4 19.9853 4 22 12 22C17.5794 22 19.2676 21.02 19.7784 19.5839"/></g></svg><span>Start a room</span></button>
+            <form class="join" id="join-form">
+              <label for="room-input">Got a code? Join the room</label>
+              <div class="join-row">
+                <input type="text" id="room-input" name="room" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64" placeholder="e.g. 7BEH4K">
+                <button class="btn btn-quiet" id="join-room" type="submit"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path stroke-linejoin="round" d="M2.00098 11.999L16.001 11.999M12.501 14.999L16.001 11.999L12.501 8.99902"/><path d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2L16.0002 2C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8L22.0002 16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.2429 22 18.8286 22 16.0002 22H15.0002C12.1718 22 10.7576 22 9.87889 21.1213C9.11051 20.3529 9.01406 19.175 9.00195 17"/></g></svg><span>Join</span></button>
+              </div>
+            </form>
           </div>
 
-          <div id="beam-active" class="hidden">
-            <div class="seg" role="group" aria-label="What to send">
-              <button class="type-btn active" data-beam-type="text" id="beam-type-text" type="button" aria-pressed="true">Text</button>
-              <button class="type-btn" data-beam-type="file" id="beam-type-file" type="button" aria-pressed="false">File</button>
-            </div>
-            <div id="beam-send-panel-text" class="beam-compose">
-              <label class="sr-only" for="beam-text">Message</label>
-              <textarea id="beam-text" rows="3" placeholder="Type or paste, then send…" name="message" autocomplete="off" data-lenis-prevent></textarea>
-              <button class="btn btn-primary" id="beam-send-text" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M17.4975 18.4851L20.6281 9.09373C21.8764 5.34874 22.5006 3.47624 21.5122 2.48782C20.5237 1.49939 18.6511 2.12356 14.906 3.37189L5.57477 6.48218C3.49295 7.1761 2.45203 7.52305 2.13608 8.28637C2.06182 8.46577 2.01692 8.65596 2.00311 8.84963C1.94433 9.67365 2.72018 10.4495 4.27188 12.0011L4.55451 12.2837C4.80921 12.5384 4.93655 12.6658 5.03282 12.8075C5.22269 13.0871 5.33046 13.4143 5.34393 13.7519C5.35076 13.9232 5.32403 14.1013 5.27057 14.4574C5.07488 15.7612 4.97703 16.4131 5.0923 16.9147C5.32205 17.9146 6.09599 18.6995 7.09257 18.9433C7.59255 19.0656 8.24576 18.977 9.5522 18.7997L9.62363 18.79C9.99191 18.74 10.1761 18.715 10.3529 18.7257C10.6738 18.745 10.9838 18.8496 11.251 19.0285C11.3981 19.1271 11.5295 19.2585 11.7923 19.5213L12.0436 19.7725C13.5539 21.2828 14.309 22.0379 15.1101 21.9985C15.3309 21.9877 15.5479 21.9365 15.7503 21.8474C16.4844 21.5244 16.8221 20.5113 17.4975 18.4851Z"/><path d="M6 18L21 3"/></g></svg><span>Send</span></button>
-            </div>
-            <div id="beam-send-panel-file" class="hidden">
-              <button class="drop-zone drop-zone-sm" id="p2p-drop-zone" type="button">
-                <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15"/><path d="M12 16V3M8 7.375L12 3L16 7.375"/></g></svg>
-                <span class="drop-zone-main">Drop a file to send, or choose one</span>
+          <div id="beam-room" class="stack hidden">
+            <div class="room-code" id="room-code-card">
+              <button class="room-code-toggle" id="room-code-toggle" type="button" aria-expanded="true" aria-controls="room-code-content">
+                <span class="room-code-label">Room code</span>
+                <span class="room-code-value" id="room-code-display" translate="no"></span>
+                <span class="room-code-toggle-text" id="room-code-toggle-text">Hide invite</span>
+                <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9L12 15L5 9"/></svg>
               </button>
-              <input type="file" id="p2p-file-input" hidden>
-            </div>
-            <ol id="beam-history" class="history" aria-label="Sent and received" data-lenis-prevent></ol>
-          </div>
-        </div>
-
-        <div class="col col-out">
-          <div class="room-code" id="room-code-card">
-            <button class="room-code-toggle" id="room-code-toggle" type="button" aria-expanded="true" aria-controls="room-code-content">
-              <span class="room-code-label">Room code</span>
-              <span class="room-code-value" id="room-code-display" translate="no"></span>
-              <span class="room-code-toggle-text" id="room-code-toggle-text">Hide invite</span>
-              <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9L12 15L5 9"/></svg>
-            </button>
-            <div class="room-code-content" id="room-code-content">
-              <div class="qr" id="invite-qr" role="img" aria-label="QR code that opens this room"></div>
-              <div class="room-code-btns">
-                <button class="btn btn-quiet btn-sm" id="copy-code-btn" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z"/><path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5"/></g></svg><span>Copy code</span></button>
-                <button class="btn btn-quiet btn-sm" id="copy-invite" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M19.5 5.5C19.5 6.88071 18.3807 8 17 8C15.6193 8 14.5 6.88071 14.5 5.5C14.5 4.11929 15.6193 3 17 3C18.3807 3 19.5 4.11929 19.5 5.5Z"/><path d="M17 16C15.6193 16 14.5 17.1193 14.5 18.5C14.5 19.8807 15.6193 21 17 21C18.3807 21 19.5 19.8807 19.5 18.5C19.5 17.1193 18.3807 16 17 16Z"/><path d="M7 9.5C5.61929 9.5 4.5 10.6193 4.5 12C4.5 13.3807 5.61929 14.5 7 14.5C8.38071 14.5 9.5 13.3807 9.5 12C9.5 10.6193 8.38071 9.5 7 9.5Z"/><path d="M9.09668 13.3628C11.0324 14.621 12.9681 15.8792 14.9038 17.1374"/><path d="M9.09668 10.6372C11.0324 9.379 12.9681 8.12079 14.9039 6.86258"/></g></svg><span>Share link</span></button>
+              <div class="room-code-content" id="room-code-content">
+                <div class="qr" id="invite-qr" role="img" aria-label="QR code that opens this room"></div>
+                <div class="room-code-side">
+                  <p class="room-code-hint">Scan this on the other device, or enter the code there.</p>
+                  <div class="room-code-btns">
+                    <button class="btn btn-quiet btn-sm" id="copy-code-btn" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z"/><path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5"/></g></svg><span>Copy code</span></button>
+                    <button class="btn btn-quiet btn-sm" id="copy-invite" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M19.5 5.5C19.5 6.88071 18.3807 8 17 8C15.6193 8 14.5 6.88071 14.5 5.5C14.5 4.11929 15.6193 3 17 3C18.3807 3 19.5 4.11929 19.5 5.5Z"/><path d="M17 16C15.6193 16 14.5 17.1193 14.5 18.5C14.5 19.8807 15.6193 21 17 21C18.3807 21 19.5 19.8807 19.5 18.5C19.5 17.1193 18.3807 16 17 16Z"/><path d="M7 9.5C5.61929 9.5 4.5 10.6193 4.5 12C4.5 13.3807 5.61929 14.5 7 14.5C8.38071 14.5 9.5 13.3807 9.5 12C9.5 10.6193 8.38071 9.5 7 9.5Z"/><path d="M9.09668 13.3628C11.0324 14.621 12.9681 15.8792 14.9038 17.1374"/><path d="M9.09668 10.6372C11.0324 9.379 12.9681 8.12079 14.9039 6.86258"/></g></svg><span>Share link</span></button>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div class="room-bar">
+              <span class="status badge-success" id="beam-status">In the room</span>
+              <span class="status-count" id="peer-count">0 other devices</span>
+              <button class="btn btn-quiet btn-sm" id="leave-room" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2L16.0002 2C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8L22.0002 16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.2429 22 18.8286 22 16.0002 22H15.0002C12.1718 22 10.7576 22 9.87889 21.1213C9.11051 20.3529 9.01406 19.175 9.00195 17"/><path stroke-linejoin="round" d="M15 12L2 12M5.5 15L2 12L5.5 9"/></g></svg><span>Leave</span></button>
+            </div>
+
+            <p id="beam-waiting" class="beam-waiting"><span id="beam-waiting-text">Waiting for someone to join. Share the code, the link or the QR code.</span></p>
+
+            <div id="beam-active" class="stack hidden">
+              <div class="composer" id="p2p-drop-zone">
+                <label class="sr-only" for="beam-text">Message</label>
+                <textarea id="beam-text" name="message" autocomplete="off" rows="3" placeholder="Type or paste, then send…" data-lenis-prevent></textarea>
+                <div class="composer-bar">
+                  <button class="chip-btn" id="p2p-attach" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M7.9175 17.8068L15.8084 10.2535C16.7558 9.34668 16.7558 7.87637 15.8084 6.96951C14.861 6.06265 13.325 6.06265 12.3776 6.96951L4.54387 14.4681C2.74382 16.1911 2.74382 18.9847 4.54387 20.7077C6.34391 22.4308 9.26237 22.4308 11.0624 20.7077L19.0105 13.0997C21.6632 10.5605 21.6632 6.44362 19.0105 3.90441C16.3578 1.3652 12.0569 1.3652 9.40419 3.90441L3 10.0346"/></svg><span>Send a file</span></button>
+                  <button class="btn btn-primary btn-sm" id="beam-send-text" type="button"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M17.4975 18.4851L20.6281 9.09373C21.8764 5.34874 22.5006 3.47624 21.5122 2.48782C20.5237 1.49939 18.6511 2.12356 14.906 3.37189L5.57477 6.48218C3.49295 7.1761 2.45203 7.52305 2.13608 8.28637C2.06182 8.46577 2.01692 8.65596 2.00311 8.84963C1.94433 9.67365 2.72018 10.4495 4.27188 12.0011L4.55451 12.2837C4.80921 12.5384 4.93655 12.6658 5.03282 12.8075C5.22269 13.0871 5.33046 13.4143 5.34393 13.7519C5.35076 13.9232 5.32403 14.1013 5.27057 14.4574C5.07488 15.7612 4.97703 16.4131 5.0923 16.9147C5.32205 17.9146 6.09599 18.6995 7.09257 18.9433C7.59255 19.0656 8.24576 18.977 9.5522 18.7997L9.62363 18.79C9.99191 18.74 10.1761 18.715 10.3529 18.7257C10.6738 18.745 10.9838 18.8496 11.251 19.0285C11.3981 19.1271 11.5295 19.2585 11.7923 19.5213L12.0436 19.7725C13.5539 21.2828 14.309 22.0379 15.1101 21.9985C15.3309 21.9877 15.5479 21.9365 15.7503 21.8474C16.4844 21.5244 16.8221 20.5113 17.4975 18.4851Z"/><path d="M6 18L21 3"/></g></svg><span>Send</span></button>
+                </div>
+                <input type="file" id="p2p-file-input" hidden>
+                <p class="drop-overlay" aria-hidden="true">Drop the file to send it</p>
+              </div>
+              <ol id="beam-history" class="history" aria-label="Sent and received"></ol>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <details class="retrieve" id="retrieve-details">
+        <summary>Have a Drop code? Open it here <svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9L12 15L5 9"/></svg></summary>
+        <div class="retrieve-form">
+          <div class="field">
+            <label for="retrieve-id">Code</label>
+            <input type="text" id="retrieve-id" name="code" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="retrieve-pw">Password <span class="field-opt">(if it has one)</span></label>
+            <input type="password" id="retrieve-pw" name="code-password" autocomplete="off">
+          </div>
+          <button class="btn btn-quiet" id="retrieve-btn" type="button">Open</button>
+        </div>
+        <div id="retrieve-result" class="hidden">
+          <pre id="retrieve-content" data-lenis-prevent></pre>
+        </div>
+      </details>
+    </div>
   </main>
 
-  <section class="where" id="where" aria-labelledby="where-title">
-    <h2 class="where-title" id="where-title" data-split>Where your things go</h2>
-    <div class="where-cols">
-      <article class="where-col where-drop">
-        <h3>Drop</h3>
-        <p>Text and files are saved on this server with the expiry you choose: <span class="expiry-list">2, 4 or 7 days</span>. Then they're deleted, and a cleanup job removes anything left behind.</p>
-        <p>A password is stored only as a bcrypt hash. Without it, anyone holding the link can open what you shared.</p>
+  <section class="how" id="how" aria-labelledby="how-title">
+    <h2 class="how-title" id="how-title" data-split>How it works</h2>
+    <div class="how-cols">
+      <article class="how-col how-drop">
+        <h3><span class="mode-icon"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M8.66667 11.2426C8.20528 10.9374 7.68059 10.7184 7.11616 10.6089C6.8475 10.5567 6.56983 10.5294 6.28571 10.5294C3.91878 10.5294 2 12.4256 2 14.7647C2 17.1038 3.91878 19 6.28571 19M14.381 8.02721C14.9767 7.81911 15.6178 7.70588 16.2857 7.70588C16.9404 7.70588 17.5693 7.81468 18.1551 8.01498M7.11616 10.6089C6.88706 9.9978 6.7619 9.33687 6.7619 8.64706C6.7619 5.52827 9.32028 3 12.4762 3C15.4159 3 17.8371 5.19371 18.1551 8.01498M18.1551 8.01498C20.393 8.78024 22 10.8811 22 13.3529C22 16.0599 20.0726 18.3221 17.5 18.8722"/><path stroke-linejoin="round" d="M12 16V22M10 18L12 16L14 18"/></g></svg></span>Drop</h3>
+        <p>Your text or file is saved on this server and you get a link and a QR code. Anyone with the link can open it until it's deleted, after <span class="expiry-list">2, 4 or 7 days</span>.</p>
+        <p>Add a password and they'll need that too. It's stored only as a bcrypt hash. Files can be up to <span class="max-size">30&nbsp;MB</span>.</p>
       </article>
-      <article class="where-col where-beam">
-        <h3>Beam</h3>
-        <p>The server only introduces the two browsers. After that, text and files travel directly between them over WebRTC, encrypted end to end.</p>
-        <p>When a direct path isn't possible, the data goes through a relay on this server. It stays encrypted there, and nothing is written to disk.</p>
+      <article class="how-col how-beam">
+        <h3><span class="mode-icon"><svg class="icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M5.66953 9.91436L8.73167 5.77133C10.711 3.09327 11.7007 1.75425 12.6241 2.03721C13.5474 2.32018 13.5474 3.96249 13.5474 7.24712V7.55682C13.5474 8.74151 13.5474 9.33386 13.926 9.70541L13.946 9.72466C14.3327 10.0884 14.9492 10.0884 16.1822 10.0884C18.4011 10.0884 19.5106 10.0884 19.8855 10.7613C19.8917 10.7724 19.8977 10.7837 19.9036 10.795C20.2576 11.4784 19.6152 12.3475 18.3304 14.0857L15.2683 18.2287C13.2889 20.9067 12.2992 22.2458 11.3758 21.9628C10.4525 21.6798 10.4525 20.0375 10.4525 16.7528L10.4526 16.4433C10.4526 15.2585 10.4526 14.6662 10.074 14.2946L10.054 14.2754C9.6673 13.9117 9.05079 13.9117 7.81775 13.9117C5.59888 13.9117 4.48945 13.9117 4.1145 13.2387C4.10829 13.2276 4.10225 13.2164 4.09639 13.205C3.74244 12.5217 4.3848 11.6526 5.66953 9.91436Z"/></svg></span>Beam</h3>
+        <p>Both devices open PeerDrop and join the same room. Text and files then go straight between the two browsers, encrypted, with no size limit.</p>
+        <p>The server only introduces the devices. If they can't reach each other directly, the data passes through a relay on this server, still encrypted and never saved.</p>
       </article>
     </div>
   </section>
