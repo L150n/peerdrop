@@ -3,260 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PeerDrop – Shared Content</title>
-  <meta name="description" content="View shared content on PeerDrop">
-  <link rel="icon" type="image/png" href="./peerdrop_logo.png">
-  <link rel="apple-touch-icon" href="./peerdrop_logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>Shared with you on PeerDrop</title>
+  <meta name="description" content="Something was shared with you on PeerDrop.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#eef2f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1d23" media="(prefers-color-scheme: dark)">
+  <!-- Share links are always <app>/view/<type>/<id>, so ../../ is the app root -->
+  <link rel="icon" type="image/png" href="../../peerdrop_logo.png">
+  <link rel="apple-touch-icon" href="../../peerdrop_logo.png">
+  <link rel="preload" href="../../vendor/fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
   <script>(function(){var t=localStorage.getItem('peerdrop-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
-    :root{--bg:#f0f2f5;--card:rgba(255,255,255,0.85);--border:rgba(0,0,0,0.08);--text:#1e293b;--text2:#475569;--muted:#94a3b8;--input:rgba(0,0,0,0.04);--code:rgba(0,0,0,0.04);--shadow:0 1px 3px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.06);--accent:#818cf8;--accent2:#c084fc;--success:#10b981;--danger:#ef4444;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;color-scheme:light dark}
-    [data-theme="dark"]{--bg:#0a0a0f;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.10);--text:#e2e8f0;--text2:#94a3b8;--muted:#64748b;--input:rgba(255,255,255,0.05);--code:rgba(255,255,255,0.06);--shadow:0 1px 3px rgba(0,0,0,0.2),0 8px 32px rgba(0,0,0,0.2)}
-    @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0a0f;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.10);--text:#e2e8f0;--text2:#94a3b8;--muted:#64748b;--input:rgba(255,255,255,0.05);--code:rgba(255,255,255,0.06);--shadow:0 1px 3px rgba(0,0,0,0.2),0 8px 32px rgba(0,0,0,0.2)}}
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:1rem;transition:background .3s,color .3s}
-    .wrap{width:100%;max-width:560px;animation:fadeIn .4s ease}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .header{text-align:center;margin-bottom:1.5rem}
-    .header-logo{display:block;width:min(220px,calc(100vw - 6rem));max-height:54px;height:auto;object-fit:contain;margin:0 auto .4rem}
-    .header p{font-size:.75rem;color:var(--muted);margin-top:.25rem}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:var(--shadow);backdrop-filter:blur(20px)}
-    .card-title{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
-    .card-title .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
-    .card-title .icon.paste-icon{background:rgba(129,140,248,0.12)}
-    .card-title .icon.file-icon{background:rgba(192,132,252,0.12)}
-    .card-title .icon.lock-icon{background:rgba(248,113,113,0.12)}
-    .card-title .icon.error-icon{background:rgba(248,113,113,0.12)}
-    .card-title h2{font-size:1rem;font-weight:600;flex:1}
-    .card-title .badge{font-size:.65rem;padding:2px 8px;border-radius:999px;font-weight:500}
-    .badge-protected{background:rgba(248,113,113,0.1);color:var(--danger);border:1px solid rgba(248,113,113,0.2)}
-    .badge-public{background:rgba(16,185,129,0.1);color:var(--success);border:1px solid rgba(16,185,129,0.2)}
-    .content-box{background:var(--code);border:1px solid var(--border);border-radius:10px;padding:1rem;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto;margin-bottom:1rem;color:var(--text)}
-    .meta{display:flex;gap:1rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-bottom:1rem}
-    .meta span{display:flex;align-items:center;gap:4px}
-    .actions{display:flex;gap:.5rem}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.5rem 1rem;border:none;border-radius:10px;font-family:var(--font);font-size:.8rem;font-weight:500;cursor:pointer;transition:all .2s}
-    .btn:active{transform:scale(.97)}
-    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 12px rgba(129,140,248,0.3)}
-    .btn-primary:hover{box-shadow:0 4px 20px rgba(129,140,248,0.4);transform:translateY(-1px)}
-    .btn-secondary{background:var(--input);color:var(--text);border:1px solid var(--border)}
-    .btn-secondary:hover{border-color:var(--accent)}
-    .btn-full{width:100%}
-    .file-info{text-align:center;padding:1.5rem 0}
-    .file-info .file-icon-big{font-size:3rem;margin-bottom:.75rem}
-    .file-info .file-name{font-size:1rem;font-weight:600;margin-bottom:.25rem;word-break:break-all}
-    .file-info .file-size{font-size:.8rem;color:var(--muted)}
-    .pw-form{display:flex;gap:.5rem}
-    .pw-form input{flex:1;padding:.5rem .75rem;background:var(--input);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:.85rem;outline:none;transition:border-color .2s}
-    .pw-form input:focus{border-color:var(--accent)}
-    .footer{text-align:center;margin-top:1.25rem}
-    .footer a{color:var(--accent);text-decoration:none;font-size:.8rem;font-weight:500}
-    .footer a:hover{text-decoration:underline}
-    .spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .error-msg{color:var(--danger);font-size:.8rem;text-align:center;padding:1rem 0}
+    @font-face{font-family:'Archivo';font-style:normal;font-display:swap;font-weight:100 900;font-stretch:62% 125%;src:url(../../vendor/fonts/archivo-latin-wdth-normal.woff2) format('woff2-variations')}
+    :root{--paper:#eef2f3;--surface:#f9fbfb;--ink:#0e2a33;--muted:#587078;--line:#c9d5d8;--accent:#0466d6;--danger:#c2362f;--on-accent:#fff;--font:'Archivo',system-ui,sans-serif;--mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,monospace;--radius:10px;--ease:cubic-bezier(.2,.7,.1,1);color-scheme:light}
+    [data-theme='dark']{--paper:#0b1d23;--surface:#11272e;--ink:#e4eef0;--muted:#8da4ab;--line:#24424b;--accent:#4da3ff;--danger:#ff7a70;--on-accent:#06161b;color-scheme:dark}
+    @media (prefers-color-scheme:dark){:root:not([data-theme='light']){--paper:#0b1d23;--surface:#11272e;--ink:#e4eef0;--muted:#8da4ab;--line:#24424b;--accent:#4da3ff;--danger:#ff7a70;--on-accent:#06161b;color-scheme:dark}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);line-height:1.55;color:var(--ink);background:var(--paper);min-height:100dvh;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-underline-offset:.2em;text-decoration-thickness:1px}
+    a:hover{color:var(--accent)}
+    button,input{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:0;touch-action:manipulation}
+    button:disabled{cursor:progress;opacity:.6}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
     .hidden{display:none!important}
-    .toast{position:fixed;bottom:1rem;right:1rem;padding:.5rem .75rem;background:var(--card);border:1px solid rgba(16,185,129,0.3);border-radius:10px;font-size:.8rem;font-weight:500;box-shadow:var(--shadow);animation:toastIn .25s ease;z-index:99}
-    @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-    @media(max-width:480px){.card{padding:1rem;border-radius:12px}.pw-form{flex-direction:column}}
+    .icon{width:1.25em;height:1.25em;flex:none}
+
+    .wrap{width:100%;max-width:720px;margin:0 auto;padding:1.25rem clamp(1.25rem,4vw,2rem) 3rem}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:clamp(2rem,7vh,4rem)}
+    .brand{display:inline-flex;align-items:center;gap:.6rem;text-decoration:none}
+    .brand:hover{color:inherit}
+    .brand img{height:2rem;width:auto}
+    .brand span{font-weight:700;font-stretch:112%;font-size:1.125rem}
+    .top a.own{color:var(--muted);font-size:.9375rem;text-decoration:none}
+    .top a.own:hover{color:var(--ink)}
+
+    /* The link, complete: someone sent this, and it reached you */
+    .link{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:'a t b' 'l l l';align-items:center;column-gap:.75rem;row-gap:.5rem;margin-bottom:2rem}
+    .link i{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--accent)}
+    .link i:first-child{grid-area:a}.link i:nth-child(3){grid-area:b}
+    .link b{grid-area:t;height:2px;background:var(--accent)}
+    .link span{font-size:.875rem;color:var(--muted)}
+    .link .la{grid-area:l;justify-self:start}.link .lb{grid-area:l;justify-self:end;text-align:right;color:var(--ink)}
+    .link.waiting b{background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 14px)}
+    .link.waiting i:nth-child(3){background:var(--paper);border-color:var(--muted)}
+    .link.broken b{background:repeating-linear-gradient(90deg,var(--danger) 0 4px,transparent 4px 12px)}
+    .link.broken i:nth-child(3){background:var(--paper);border-color:var(--danger)}
+
+    h1{text-wrap:balance;font-size:clamp(2.25rem,7vw,3.75rem);line-height:1;letter-spacing:-.03em;font-weight:800;font-stretch:122%;margin-bottom:.75rem;word-break:break-word}
+    .sub{color:var(--muted);margin-bottom:1.75rem;max-width:36em}
+
+    .content-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.1rem 1.25rem;font-family:var(--mono);font-size:.9375rem;line-height:1.65;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow:auto;margin-bottom:1.25rem}
+    .file-card{display:flex;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem}
+    .file-card .ext{flex:none;display:grid;place-items:center;width:3.5rem;height:3.5rem;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:800;font-stretch:125%;font-size:.8125rem;letter-spacing:.04em}
+    .file-card .name{font-weight:700;word-break:break-all}
+    .file-card .size{color:var(--muted);font-size:.9375rem;font-variant-numeric:tabular-nums}
+
+    .btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:3rem;padding:0 1.35rem;border-radius:var(--radius);font-weight:600;font-stretch:108%;transition:background-color .2s,border-color .2s,color .2s}
+    .btn-primary{background:var(--accent);color:var(--on-accent)}
+    .btn-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 86%,var(--ink))}
+    .btn-quiet{border:1px solid var(--line)}
+    .btn-quiet:hover{border-color:var(--accent);color:var(--accent)}
+    .actions{display:flex;gap:.75rem;flex-wrap:wrap}
+
+    .pw-form{display:grid;gap:.4rem;max-width:26rem}
+    .pw-form label{font-size:.875rem;font-weight:600}
+    .pw-row{display:flex;gap:.5rem}
+    .pw-row input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:.75rem .9rem;font-size:1rem}
+    .pw-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+    .pw-error{color:var(--danger);font-size:.9375rem;margin-top:.25rem}
+
+    .loading{color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:.7rem 1.1rem;border-radius:var(--radius);font-size:.9375rem;font-weight:500;box-shadow:0 8px 24px rgba(4,20,26,.18)}
+    .toast.error{background:var(--danger);color:#fff}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation:none!important}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="header">
-      <img src="./peerdrop.png" alt="PeerDrop" class="header-logo">
-      <p>Shared content</p>
-    </div>
+    <header class="top">
+      <a class="brand home-link" href="../../" aria-label="PeerDrop home"><img src="../../peerdrop_logo.png" alt="" width="154" height="192"><span translate="no">PeerDrop</span></a>
+      <a class="own home-link" href="../../">Share something yourself</a>
+    </header>
 
-    <div class="card">
-      <!-- Loading -->
-      <div id="state-loading"><div class="spinner"></div></div>
+    <main>
+      <div class="link waiting" id="link" aria-hidden="true">
+        <i></i><b></b><i></i>
+        <span class="la">Sent with PeerDrop</span>
+        <span class="lb" id="link-b">You</span>
+      </div>
 
-      <!-- Password prompt -->
+      <div id="state-loading" class="loading" role="status">Opening…</div>
+
       <div id="state-password" class="hidden">
-        <div class="card-title">
-          <div class="icon lock-icon">🔒</div>
-          <h2>Password Required</h2>
-        </div>
+        <h1>This one has a password</h1>
+        <p class="sub">Ask the person who shared it if you don't have it.</p>
         <form class="pw-form" id="pw-form">
-          <input type="password" id="pw-input" placeholder="Enter password" autocomplete="off" autofocus>
-          <button type="submit" class="btn btn-primary">Unlock</button>
+          <label for="pw-input">Password</label>
+          <div class="pw-row">
+            <input type="password" id="pw-input" name="password" autocomplete="off">
+            <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M2 16C2 13.1716 2 11.7574 2.87868 10.8787C3.75736 10 5.17157 10 8 10H16C18.8284 10 20.2426 10 21.1213 10.8787C22 11.7574 22 13.1716 22 16C22 18.8284 22 20.2426 21.1213 21.1213C20.2426 22 18.8284 22 16 22H8C5.17157 22 3.75736 22 2.87868 21.1213C2 20.2426 2 18.8284 2 16Z"/><path d="M12 14V18"/><path d="M6 10V8C6 4.68629 8.68629 2 12 2C15.3137 2 18 4.68629 18 8V10"/></g></svg>Unlock</button>
+          </div>
+          <p id="pw-error" class="pw-error hidden" role="alert"></p>
         </form>
-        <p id="pw-error" class="error-msg hidden"></p>
       </div>
 
-      <!-- Error -->
       <div id="state-error" class="hidden">
-        <div class="card-title">
-          <div class="icon error-icon">😕</div>
-          <h2 id="error-title">Not Found</h2>
-        </div>
-        <p class="error-msg" id="error-detail">This content may have expired or doesn't exist.</p>
+        <h1 id="error-title">This link has expired</h1>
+        <p class="sub" id="error-detail">Shared things are deleted after a few days. Ask for a new link.</p>
+        <a class="btn btn-quiet home-link" href="../../">Share something yourself</a>
       </div>
 
-      <!-- Paste content -->
       <div id="state-paste" class="hidden">
-        <div class="card-title">
-          <div class="icon paste-icon">📝</div>
-          <h2>Shared Text</h2>
-          <span class="badge" id="paste-badge"></span>
-        </div>
-        <div class="content-box" id="paste-content"></div>
-        <div class="meta" id="paste-meta"></div>
+        <h1>Text shared with you</h1>
+        <p class="sub" id="paste-meta"></p>
+        <div class="content-box" id="paste-content" tabindex="0" aria-label="Shared text"></div>
         <div class="actions">
-          <button class="btn btn-primary" id="copy-btn" onclick="copyContent()">📋 Copy</button>
+          <button class="btn btn-primary" id="copy-btn" type="button"><svg class="icon" aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z"/><path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5"/></g></svg>Copy text</button>
         </div>
       </div>
 
-      <!-- File content -->
       <div id="state-file" class="hidden">
-        <div class="card-title">
-          <div class="icon file-icon">📄</div>
-          <h2>Shared File</h2>
-          <span class="badge" id="file-badge"></span>
+        <h1>A file shared with you</h1>
+        <p class="sub" id="file-meta"></p>
+        <div class="file-card">
+          <span class="ext" id="file-ext" aria-hidden="true">FILE</span>
+          <div><div class="name" id="file-name"></div><div class="size" id="file-size"></div></div>
         </div>
-        <div class="file-info">
-          <div class="file-icon-big" id="file-type-icon">📄</div>
-          <div class="file-name" id="file-name"></div>
-          <div class="file-size" id="file-size"></div>
-        </div>
-        <div class="meta" id="file-meta"></div>
         <div class="actions">
-          <button class="btn btn-primary btn-full" id="download-btn" onclick="downloadFile()">⬇ Download</button>
+          <button class="btn btn-primary" id="download-btn" type="button"><svg class="icon" aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15"/><path d="M12 3V16M8 11.625L12 16L16 11.625"/></g></svg><span id="download-label">Save file</span></button>
         </div>
       </div>
-    </div>
-
-    <div class="footer">
-      <a id="home-link" href="../../../">← Share your own on PeerDrop</a>
-    </div>
+    </main>
   </div>
 
   <script>
   (function(){
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const id = pathParts[pathParts.length - 1];
+    const $ = id => document.getElementById(id);
+    const pathParts = location.pathname.split('/').filter(Boolean);
     const type = pathParts[pathParts.length - 2]; // 'paste' or 'file'
-    const apiBase = window.location.pathname.replace('/view/', '/');
-    const homeBase = window.location.pathname.split('/view/')[0] + '/';
+    const apiBase = location.pathname.replace('/view/', '/');
 
-    document.getElementById('home-link').href = homeBase;
-
-    const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
-    const fmtDate = s => { try{return new Date(s).toLocaleString()}catch(e){return s} };
-    const fileIcons = {image:'🖼️',video:'🎬',audio:'🎵',pdf:'📕',zip:'📦',text:'📄'};
-    function guessIcon(name,mime){
-      if(mime&&mime.startsWith('image'))return fileIcons.image;
-      if(mime&&mime.startsWith('video'))return fileIcons.video;
-      if(mime&&mime.startsWith('audio'))return fileIcons.audio;
-      if(mime&&mime.includes('pdf'))return fileIcons.pdf;
-      if(mime&&(mime.includes('zip')||mime.includes('archive')))return fileIcons.zip;
-      return fileIcons.text;
-    }
+    const fmt = b => b<1024?b+'\u00a0B':b<1048576?(b/1024).toFixed(1)+'\u00a0KB':(b/1048576).toFixed(1)+'\u00a0MB';
+    const when = s => { try { return new Date(s).toLocaleString([], { dateStyle:'medium', timeStyle:'short' }); } catch { return s; } };
+    const plural = (n, w) => `${n} ${w}${n==1?'':'s'}`;
 
     let storedPassword = '';
     let fileData = null;
 
     function show(stateId){
-      ['state-loading','state-password','state-error','state-paste','state-file'].forEach(s=>{
-        document.getElementById(s).classList.toggle('hidden',s!==stateId);
-      });
+      ['state-loading','state-password','state-error','state-paste','state-file'].forEach(s => $(s).classList.toggle('hidden', s !== stateId));
+      const link = $('link');
+      link.className = 'link' + (stateId === 'state-error' ? ' broken' : (stateId === 'state-paste' || stateId === 'state-file') ? '' : ' waiting');
+      $('link-b').textContent = stateId === 'state-error' ? 'Link expired' : 'You';
+      if (stateId === 'state-password') $('pw-input').focus();
+    }
+
+    function toast(msg, type){
+      const el = document.createElement('div');
+      el.className = 'toast' + (type ? ' ' + type : '');
+      el.setAttribute('role', 'status');
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
     }
 
     async function load(){
       show('state-loading');
-      try{
-        if(type==='paste') await loadPaste();
-        else if(type==='file') await loadFile();
-        else showError('Invalid link','This link appears to be malformed.');
-      }catch(e){ showError('Error',e.message); }
+      try {
+        if (type === 'paste') await loadPaste();
+        else if (type === 'file') await loadFile();
+        else showError('This link is incomplete', 'Check that you copied the whole link.');
+      } catch(e) { showError('Couldn\'t open this link', 'Check your connection and reload the page.'); }
     }
 
     async function loadPaste(pw){
       const q = pw ? '?password='+encodeURIComponent(pw) : '';
-      const r = await fetch(apiBase+q, {headers:{'Accept':'application/json'}});
-      if(r.status===401){ show('state-password'); return; }
-      if(r.status===403){ show('state-password'); showPwError('Invalid password'); return; }
-      if(!r.ok){ const d=await r.json().catch(()=>({})); showError('Not Found',d.error||'This paste may have expired.'); return; }
+      const r = await fetch(apiBase+q, { headers:{ 'Accept':'application/json' } });
+      if (r.status === 401) { show('state-password'); return; }
+      if (r.status === 403) { show('state-password'); showPwError('That password isn\'t right. Try again.'); return; }
+      if (!r.ok) { showError('This link has expired', 'Shared things are deleted after a few days. Ask for a new link.'); return; }
       const d = await r.json();
-      document.getElementById('paste-content').textContent = d.content;
-      document.getElementById('paste-badge').textContent = d.password_protected?'🔒 Protected':'🔓 Public';
-      document.getElementById('paste-badge').className = 'badge '+(d.password_protected?'badge-protected':'badge-public');
-      let meta = '';
-      if(d.views!==undefined) meta += '<span>👁 '+d.views+' views</span>';
-      if(d.created_at) meta += '<span>📅 '+fmtDate(d.created_at)+'</span>';
-      if(d.expires_at) meta += '<span>⏳ '+fmtDate(d.expires_at)+'</span>';
-      document.getElementById('paste-meta').innerHTML = meta;
-      document.title = 'PeerDrop – Shared Text';
+      $('paste-content').textContent = d.content;
+      const bits = [];
+      if (d.expires_at) bits.push(`Deleted on ${when(d.expires_at)}.`);
+      if (d.views !== undefined) bits.push(`Opened ${plural(d.views, 'time')}.`);
+      $('paste-meta').textContent = bits.join(' ');
+      document.title = 'Text shared with you on PeerDrop';
       show('state-paste');
     }
 
     async function loadFile(pw){
-      const infoUrl = apiBase+'/info';
-      const r = await fetch(infoUrl, {headers:{'Accept':'application/json'}});
-      if(!r.ok){ showError('Not Found','This file may have expired.'); return; }
+      const r = await fetch(apiBase+'/info', { headers:{ 'Accept':'application/json' } });
+      if (!r.ok) { showError('This link has expired', 'Shared files are deleted after a few days. Ask for a new link.'); return; }
       fileData = await r.json();
-      if(fileData.password_protected && !pw){ show('state-password'); return; }
-      if(pw) storedPassword = pw;
-      document.getElementById('file-name').textContent = fileData.original_name;
-      document.getElementById('file-size').textContent = fmt(fileData.size);
-      document.getElementById('file-type-icon').textContent = guessIcon(fileData.original_name,fileData.mimetype);
-      document.getElementById('file-badge').textContent = fileData.password_protected?'🔒 Protected':'🔓 Public';
-      document.getElementById('file-badge').className = 'badge '+(fileData.password_protected?'badge-protected':'badge-public');
-      let meta = '';
-      if(fileData.created_at) meta += '<span>📅 '+fmtDate(fileData.created_at)+'</span>';
-      if(fileData.expires_at) meta += '<span>⏳ '+fmtDate(fileData.expires_at)+'</span>';
-      document.getElementById('file-meta').innerHTML = meta;
-      document.title = 'PeerDrop – '+fileData.original_name;
+      if (fileData.password_protected && !pw) { show('state-password'); return; }
+      if (pw) storedPassword = pw;
+      const name = fileData.original_name || 'download';
+      const ext = name.includes('.') ? name.split('.').pop().slice(0, 4).toUpperCase() : 'FILE';
+      $('file-name').textContent = name;
+      $('file-size').textContent = fmt(fileData.size);
+      $('file-ext').textContent = ext;
+      $('file-meta').textContent = fileData.expires_at ? `Deleted on ${when(fileData.expires_at)}.` : '';
+      document.title = `${name} on PeerDrop`;
       show('state-file');
     }
 
-    function showError(title,detail){
-      document.getElementById('error-title').textContent=title;
-      document.getElementById('error-detail').textContent=detail;
+    function showError(title, detail){
+      $('error-title').textContent = title;
+      $('error-detail').textContent = detail;
       show('state-error');
     }
     function showPwError(msg){
-      const el=document.getElementById('pw-error');
-      el.textContent=msg; el.classList.remove('hidden');
+      const el = $('pw-error');
+      el.textContent = msg; el.classList.remove('hidden');
     }
 
-    document.getElementById('pw-form').addEventListener('submit',async e=>{
+    $('pw-form').addEventListener('submit', async e => {
       e.preventDefault();
-      const pw=document.getElementById('pw-input').value.trim();
-      if(!pw)return;
-      document.getElementById('pw-error').classList.add('hidden');
-      if(type==='paste') await loadPaste(pw);
-      else await loadFile(pw);
+      const pw = $('pw-input').value.trim();
+      if (!pw) { showPwError('Enter the password first.'); return; }
+      $('pw-error').classList.add('hidden');
+      if (type === 'paste') await loadPaste(pw);
+      else {
+        // Check the password before showing the file
+        const r = await fetch(apiBase+'?password='+encodeURIComponent(pw), { method:'HEAD' }).catch(() => null);
+        if (r && (r.status === 401 || r.status === 403)) { showPwError('That password isn\'t right. Try again.'); return; }
+        await loadFile(pw);
+      }
     });
 
-    window.copyContent = function(){
-      const t=document.getElementById('paste-content').textContent;
-      navigator.clipboard.writeText(t).then(()=>{
-        const toast=document.createElement('div');toast.className='toast';toast.textContent='Copied!';
-        document.body.appendChild(toast);setTimeout(()=>toast.remove(),2000);
-      });
-    };
+    $('copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText($('paste-content').textContent)
+        .then(() => toast('Copied'))
+        .catch(() => toast('Couldn\'t copy. Select the text and copy it yourself.', 'error'));
+    });
 
-    window.downloadFile = async function(){
-      const btn=document.getElementById('download-btn');
-      btn.disabled=true; btn.textContent='⏳ Downloading...';
-      try{
-        const q=storedPassword?'?password='+encodeURIComponent(storedPassword):'';
-        const r=await fetch(apiBase+q);
-        if(r.status===401||r.status===403){show('state-password');btn.disabled=false;btn.textContent='⬇ Download';return;}
-        if(!r.ok)throw new Error('Download failed');
-        const blob=await r.blob();
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download=fileData?fileData.original_name:'download';
-        a.click(); URL.revokeObjectURL(a.href);
-        btn.textContent='✓ Downloaded';
-        setTimeout(()=>{btn.textContent='⬇ Download';btn.disabled=false;},2000);
-      }catch(e){btn.textContent='⬇ Download';btn.disabled=false;alert(e.message);}
-    };
+    $('download-btn').addEventListener('click', async () => {
+      const btn = $('download-btn'), label = $('download-label');
+      btn.disabled = true; label.textContent = 'Saving…';
+      try {
+        const q = storedPassword ? '?password='+encodeURIComponent(storedPassword) : '';
+        const r = await fetch(apiBase+q);
+        if (r.status === 401 || r.status === 403) { show('state-password'); return; }
+        if (!r.ok) throw new Error();
+        const blob = await r.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileData ? fileData.original_name : 'download';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast('Saved');
+      } catch {
+        toast('Couldn\'t save the file. It may have expired.', 'error');
+      } finally {
+        btn.disabled = false; label.textContent = 'Save file';
+      }
+    });
 
     load();
   })();

@@ -69,6 +69,21 @@ fastify.register(require('@fastify/static'), {
   prefix: '/',
 });
 
+// Front-end libraries straight from node_modules, so there's no build step
+const vendor = {
+  gsap: 'gsap/dist',
+  lenis: 'lenis/dist',
+  fonts: '@fontsource-variable/archivo/files',
+};
+for (const [name, dir] of Object.entries(vendor)) {
+  fastify.register(require('@fastify/static'), {
+    root: path.join(__dirname, '..', 'node_modules', dir),
+    prefix: `/vendor/${name}/`,
+    decorateReply: false,
+    maxAge: '7d',
+  });
+}
+
 // Multipart
 fastify.register(require('@fastify/multipart'), {
   limits: {

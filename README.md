@@ -18,7 +18,7 @@ Lightweight, self-hosted text & file sharing with optional P2P transfer. No sign
 - **P2P Transfer** — WebRTC data channels for direct browser-to-browser file transfer
 - **Rate Limiting** — 100 req/min general, 10 uploads/hour per IP
 - **Auto Cleanup** — Cron-based orphaned file removal
-- **Modern UI** — Dark glassmorphism design, drag & drop, mobile responsive
+- **Interface** — Light and dark themes, drag & drop, mobile friendly, keyboard accessible, respects reduced motion
 
 ---
 
