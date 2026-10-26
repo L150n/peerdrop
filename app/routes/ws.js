@@ -1,104 +1,131 @@
 // WebRTC signaling via WebSocket
-// Room-based: peers join a room, exchange offer/answer/ICE candidates
+// Room-based: peers join a room, exchange offer/answer/ICE candidates.
+//
+// A peer keeps the same peerId when its socket reconnects (proxy timeout, phone
+// asleep, tab in the background). The WebRTC link between browsers doesn't need
+// this socket once it's up, so a reconnect must not look like the peer leaving.
 
-const rooms = new Map(); // roomId -> Set of WebSocket connections
+const rooms = new Map(); // roomId -> Map(peerId -> socket)
+
+// Must stay under nginx's default 60 s proxy_read_timeout, which otherwise
+// closes a quiet signaling socket a minute after peers connect.
+const HEARTBEAT_MS = 25000;
+const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const RELAYED = new Set(['offer', 'answer', 'ice-candidate', 'reconnect']);
+
+function send(socket, msg) {
+  if (socket.readyState === 1) socket.send(JSON.stringify(msg));
+}
 
 async function wsRoutes(fastify) {
+  // Ping every client and drop the ones that stopped answering
+  const heartbeat = setInterval(() => {
+    for (const client of fastify.websocketServer.clients) {
+      if (client.isAlive === false) {
+        client.terminate();
+        continue;
+      }
+      client.isAlive = false;
+      client.ping();
+    }
+  }, HEARTBEAT_MS);
+  fastify.addHook('onClose', (instance, done) => {
+    clearInterval(heartbeat);
+    done();
+  });
+
   fastify.get('/ws', { websocket: true }, (socket, request) => {
     let currentRoom = null;
     let peerId = null;
 
+    socket.isAlive = true;
+    socket.on('pong', () => { socket.isAlive = true; });
+
     socket.on('message', (raw) => {
+      socket.isAlive = true;
       let msg;
       try {
         msg = JSON.parse(raw.toString());
       } catch {
-        socket.send(JSON.stringify({ type: 'error', message: 'Invalid JSON' }));
+        send(socket, { type: 'error', message: 'Invalid JSON' });
         return;
       }
 
       switch (msg.type) {
         case 'join': {
-          const roomId = msg.room;
-          if (!roomId) {
-            socket.send(JSON.stringify({ type: 'error', message: 'Room ID required' }));
+          const roomId = typeof msg.room === 'string' ? msg.room.trim().toUpperCase() : '';
+          if (!ID_RE.test(roomId)) {
+            send(socket, { type: 'error', message: 'Invalid room code' });
             return;
           }
+          if (currentRoom) cleanupPeer('leave');
 
-          peerId = msg.peerId || Math.random().toString(36).slice(2, 10);
+          peerId = typeof msg.peerId === 'string' && ID_RE.test(msg.peerId)
+            ? msg.peerId
+            : Math.random().toString(36).slice(2, 10);
           currentRoom = roomId;
 
           if (!rooms.has(roomId)) {
             rooms.set(roomId, new Map());
           }
-
           const room = rooms.get(roomId);
 
-          // Notify existing peers
-          for (const [existingPeerId, existingSocket] of room) {
-            existingSocket.send(JSON.stringify({
-              type: 'peer-joined',
-              peerId,
-            }));
+          // Same peer coming back on a new socket: retire the old one quietly
+          const previous = room.get(peerId);
+          room.set(peerId, socket);
+          if (previous && previous !== socket) previous.terminate();
+
+          const others = [];
+          for (const [otherId, otherSocket] of room) {
+            if (otherId === peerId) continue;
+            others.push(otherId);
+            send(otherSocket, { type: 'peer-joined', peerId });
           }
 
-          // Send list of existing peers to the new joiner
-          const existingPeers = Array.from(room.keys());
-          socket.send(JSON.stringify({
-            type: 'joined',
-            room: roomId,
-            peerId,
-            peers: existingPeers,
-          }));
-
-          room.set(peerId, socket);
+          send(socket, { type: 'joined', room: roomId, peerId, peers: others });
           break;
         }
 
-        case 'offer':
-        case 'answer':
-        case 'ice-candidate': {
+        case 'ping':
+          send(socket, { type: 'pong' });
+          break;
+
+        case 'leave':
+          cleanupPeer('leave');
+          break;
+
+        default: {
+          if (!RELAYED.has(msg.type)) {
+            send(socket, { type: 'error', message: `Unknown type: ${msg.type}` });
+            return;
+          }
           if (!currentRoom || !rooms.has(currentRoom)) return;
 
-          const room = rooms.get(currentRoom);
-          const targetSocket = room.get(msg.target);
-          if (targetSocket && targetSocket.readyState === 1) {
-            targetSocket.send(JSON.stringify({
-              type: msg.type,
-              from: peerId,
-              data: msg.data,
-            }));
+          const targetSocket = rooms.get(currentRoom).get(msg.target);
+          if (targetSocket) {
+            send(targetSocket, { type: msg.type, from: peerId, data: msg.data });
           }
           break;
         }
-
-        case 'leave': {
-          cleanupPeer();
-          break;
-        }
-
-        default:
-          socket.send(JSON.stringify({ type: 'error', message: `Unknown type: ${msg.type}` }));
       }
     });
 
     socket.on('close', () => {
-      cleanupPeer();
+      cleanupPeer('disconnect');
     });
 
-    function cleanupPeer() {
-      if (currentRoom && rooms.has(currentRoom)) {
-        const room = rooms.get(currentRoom);
+    // reason: 'leave' when the peer left on purpose, 'disconnect' when only its
+    // signaling socket went away (its WebRTC link may still be working)
+    function cleanupPeer(reason) {
+      const room = currentRoom && rooms.get(currentRoom);
+      // After a reconnect the room points at the newer socket; leave it alone
+      if (room && room.get(peerId) === socket) {
         room.delete(peerId);
 
-        // Notify remaining peers
-        for (const [, s] of room) {
-          if (s.readyState === 1) {
-            s.send(JSON.stringify({ type: 'peer-left', peerId }));
-          }
+        for (const s of room.values()) {
+          send(s, { type: 'peer-left', peerId, reason });
         }
 
-        // Cleanup empty rooms
         if (room.size === 0) {
           rooms.delete(currentRoom);
         }

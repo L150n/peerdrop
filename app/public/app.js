@@ -43,7 +43,8 @@
     ],
   };
 
-  fetch('./config').then(r=>r.json()).then(c=>{ config=c; populateExpiry(); }).catch(()=>populateExpiry());
+  // Beam waits for this so peers get the TURN servers from the start
+  const configReady = fetch('./config').then(r=>r.json()).then(c=>{ config=c; }).catch(()=>{}).then(populateExpiry);
 
   function populateExpiry() {
     const sel = $('#expiry-select');
@@ -226,8 +227,27 @@
   });
 
   // ─── Beam: P2P WebRTC ─────────────────────────────────────────
-  let ws=null, myPeerId=null, peers={}, dataChannels={}, incomingFiles={};
+  // The signaling socket is only needed while peers find each other. Once a data
+  // channel is open it runs on its own, so losing the socket (proxy timeout, phone
+  // asleep, tab in the background) must not end the session: we reconnect quietly
+  // with the same peer id and only rebuild links that actually died.
   const CHUNK = 16384;
+  const BUFFER_HIGH = 1 << 20;  // pause sending when 1 MB is queued...
+  const BUFFER_LOW = 1 << 18;   // ...and resume below 256 KB
+  const randId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const myPeerId = randId();
+
+  let ws = null, room = null, inRoom = false;
+  let wsRetry = 0, wsTimer = null, lastHeard = 0;
+  let links = {};             // remote peerId -> { pc, dc, sid, born, opened, timers }
+  let roomPeers = new Set();  // who the server says is in the room
+  let seenPeers = new Set();  // peers we've had a link with, for "reconnected" toasts
+  let incoming = {};          // remote peerId -> file being received from them
+  let receivedBlobs = {};
+  let sigQueue = Promise.resolve();
+  let releaseLock = null;
+  const sendQueue = []; let sending = false;
+
   const roomCodeCard = $('#room-code-card');
   const roomCodeToggle = $('#room-code-toggle');
   const roomCodeToggleText = $('#room-code-toggle-text');
@@ -261,40 +281,102 @@
   // Check URL params for auto-join
   const urlParams = new URLSearchParams(location.search);
   if (urlParams.has('room')) {
-    const room = urlParams.get('room');
     $('#toggle-beam').click();
-    setTimeout(() => { connectWS(room); }, 300);
+    connectWS(urlParams.get('room'));
   }
 
   // Create Invite: auto-generate room code and join
   $('#create-invite').addEventListener('click', () => {
-    const room = Math.random().toString(36).slice(2,8).toUpperCase();
-    connectWS(room);
+    connectWS(Math.random().toString(36).slice(2,8).toUpperCase());
   });
 
   // Manual join with code
   $('#join-room').addEventListener('click', () => {
-    const room = $('#room-input').value.trim();
-    if (!room) { toast('Enter a room code','error'); return; }
-    connectWS(room);
+    const code = $('#room-input').value.trim();
+    if (!code) { toast('Enter a room code','error'); return; }
+    connectWS(code);
   });
 
-  $('#leave-room').addEventListener('click', () => disconnectWS());
+  $('#leave-room').addEventListener('click', () => leaveRoom());
 
-  function connectWS(room) {
-    const proto = location.protocol==='https:'?'wss:':'ws:';
-    const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
-    ws = new WebSocket(`${proto}//${location.host}${bp}ws`);
-    ws.onopen = () => ws.send(JSON.stringify({type:'join',room}));
-    ws.onmessage = e => handleSig(JSON.parse(e.data));
-    ws.onclose = () => disconnectWS(true);
-    ws.onerror = () => toast('Connection error','error');
+  // Come back quickly after the phone slept or the tab was frozen
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkSocket(); });
+  document.addEventListener('resume', checkSocket);
+  window.addEventListener('online', checkSocket);
+  window.addEventListener('pageshow', e => { if (e.persisted) checkSocket(); });
+  window.addEventListener('pagehide', e => {
+    if (!e.persisted && ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type:'leave' }));
+  });
+
+  function connectWS(code) {
+    if (room) leaveRoom(true);
+    room = code.trim().toUpperCase();
+    wsRetry = 0;
+    holdLock();
+    configReady.then(() => { if (room && !ws) openSocket(); });
   }
 
-  function disconnectWS(silent) {
-    if(ws){ws.close();ws=null;}
-    Object.values(peers).forEach(pc=>pc.close());
-    peers={}; dataChannels={}; myPeerId=null; receivedBlobs={};
+  function openSocket() {
+    clearTimeout(wsTimer);
+    const proto = location.protocol==='https:'?'wss:':'ws:';
+    const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+    const s = new WebSocket(`${proto}//${location.host}${bp}ws`);
+    ws = s;
+    s.onopen = () => {
+      wsRetry = 0; lastHeard = Date.now();
+      s.send(JSON.stringify({ type:'join', room, peerId:myPeerId }));
+    };
+    s.onmessage = e => {
+      if (ws !== s) return;
+      lastHeard = Date.now();
+      let msg; try { msg = JSON.parse(e.data); } catch { return; }
+      sigQueue = sigQueue.then(() => handleSig(msg)).catch(err => console.warn('PeerDrop signaling:', err));
+    };
+    s.onclose = () => {
+      if (ws !== s) return;
+      ws = null;
+      if (!room) return;
+      if (!inRoom) { toast('Could not reach the server','error'); leaveRoom(true); return; }
+      setSignal('reconnecting');
+      wsTimer = setTimeout(openSocket, Math.min(1000 * 2 ** wsRetry++, 15000));
+    };
+  }
+
+  // After the phone sleeps a socket can still look open although the connection
+  // is gone. Ping it, and replace it if the server doesn't answer in time.
+  function checkSocket() {
+    if (!room) return;
+    if (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+      wsRetry = 0; openSocket(); return;
+    }
+    if (ws.readyState !== WebSocket.OPEN) return;
+    const s = ws, sentAt = Date.now();
+    s.send(JSON.stringify({ type:'ping' }));
+    setTimeout(() => {
+      if (ws !== s || lastHeard >= sentAt) return;
+      ws = null; s.onclose = null; s.close();
+      setSignal('reconnecting');
+      wsRetry = 0; openSocket();
+    }, 4000);
+  }
+
+  function signal(type, target, data) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type, target, data }));
+  }
+
+  function leaveRoom(silent) {
+    const s = ws;
+    ws = null; room = null; inRoom = false;
+    clearTimeout(wsTimer);
+    if (s) {
+      s.onclose = null;
+      if (s.readyState === WebSocket.OPEN) s.send(JSON.stringify({ type:'leave' }));
+      s.close();
+    }
+    Object.keys(links).forEach(dropLink);
+    roomPeers.clear(); seenPeers.clear();
+    incoming = {}; receivedBlobs = {}; sendQueue.length = 0;
+    dropLock();
     setRoomCardCollapsible(false);
     $('#beam-connect').classList.remove('hidden');
     $('#beam-room').classList.add('hidden');
@@ -304,104 +386,237 @@
     if(!silent) toast('Left room','info');
   }
 
-  function getInviteUrl(room) {
+  // Chrome doesn't freeze a background tab that holds a Web Lock
+  function holdLock() {
+    if (!navigator.locks || releaseLock) return;
+    navigator.locks.request(`peerdrop-beam-${myPeerId}`, () => new Promise(r => { releaseLock = r; })).catch(()=>{});
+  }
+  function dropLock() { if (releaseLock) { releaseLock(); releaseLock = null; } }
+
+  function getInviteUrl(code) {
     const bp = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
-    return `${location.origin}${bp}?room=${encodeURIComponent(room)}`;
+    return `${location.origin}${bp}?room=${encodeURIComponent(code)}`;
+  }
+
+  function setSignal(state) {
+    const el = $('#beam-status');
+    el.textContent = state === 'online' ? 'Connected' : 'Reconnecting…';
+    el.classList.toggle('badge-success', state === 'online');
+    el.classList.toggle('badge-warning', state !== 'online');
   }
 
   async function handleSig(msg) {
     switch(msg.type) {
-      case 'joined':
-        myPeerId = msg.peerId;
-        $('#beam-connect').classList.add('hidden');
-        $('#beam-room').classList.remove('hidden');
-        $('#room-code-display').textContent = msg.room;
-        updatePeerCount(msg.peers.length);
-        makeQR($('#invite-qr'), getInviteUrl(msg.room), 100);
-        setRoomCardCollapsible(msg.peers.length > 0);
-        if (msg.peers.length > 0) setRoomCardCollapsed(true);
-        for(const rp of msg.peers) await createPC(rp,true);
+      case 'joined': {
+        const first = !inRoom;
+        inRoom = true;
+        setSignal('online');
+        roomPeers = new Set(msg.peers);
+        if (first) {
+          $('#beam-connect').classList.add('hidden');
+          $('#beam-room').classList.remove('hidden');
+          $('#room-code-display').textContent = msg.room;
+          makeQR($('#invite-qr'), getInviteUrl(msg.room), 100);
+        }
+        // Links to peers who left while our socket was down
+        Object.keys(links).forEach(rid => { if (!roomPeers.has(rid) && !isUp(rid)) dropLink(rid); });
+        // Anything negotiated while our socket was down may have lost messages
+        msg.peers.forEach(rid => ensureLink(rid, true));
+        refreshPeers();
         break;
+      }
       case 'peer-joined':
-        await createPC(msg.peerId,false);
-        showBeamActive();
-        updatePeerCount();
-        setRoomCardCollapsible(true);
-        setRoomCardCollapsed(true);
-        toast('Peer connected!','success');
+        roomPeers.add(msg.peerId);
+        ensureLink(msg.peerId, true);
         break;
-      case 'peer-left':
-        if(peers[msg.peerId]){peers[msg.peerId].close();delete peers[msg.peerId];delete dataChannels[msg.peerId];}
-        updatePeerCount();
-        if(!Object.keys(peers).length){
-          $('#beam-active').classList.add('hidden');
-          $('#beam-waiting').classList.remove('hidden');
-          setRoomCardCollapsible(false);
-        }
-        toast('Peer disconnected','info');
+      case 'peer-left': {
+        const rid = msg.peerId;
+        roomPeers.delete(rid);
+        // Only its signaling dropped: keep a working link, it will rejoin
+        if (msg.reason !== 'leave' && isUp(rid)) break;
+        const wasOpen = links[rid] && links[rid].opened;
+        dropLink(rid);
+        failIncoming(rid);
+        refreshPeers();
+        if (wasOpen || msg.reason === 'leave') toast(msg.reason === 'leave' ? 'Peer left' : 'Peer disconnected','info');
         break;
+      }
       case 'offer': {
-        const pc=peers[msg.from]||(await createPC(msg.from,false));
-        await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
-        const ans=await pc.createAnswer(); await pc.setLocalDescription(ans);
-        ws.send(JSON.stringify({type:'answer',target:msg.from,data:ans}));
+        const { sid, sdp } = msg.data || {};
+        if (!sid || !sdp) break;
+        // The other side makes the offers, so a new one replaces any link we had
+        dropLink(msg.from);
+        const link = createLink(msg.from, sid, false);
+        await link.pc.setRemoteDescription(sdp);
+        await link.pc.setLocalDescription(await link.pc.createAnswer());
+        signal('answer', msg.from, { sid, sdp:link.pc.localDescription });
         break;
       }
-      case 'answer': { const pc=peers[msg.from]; if(pc) await pc.setRemoteDescription(new RTCSessionDescription(msg.data)); break; }
-      case 'ice-candidate': { const pc=peers[msg.from]; if(pc&&msg.data) await pc.addIceCandidate(new RTCIceCandidate(msg.data)); break; }
-      case 'error': toast(msg.message,'error'); break;
-    }
-  }
-
-  async function createPC(remotePeerId,initiator) {
-    const pc = new RTCPeerConnection({ iceServers: config.ice_servers || [] });
-    peers[remotePeerId] = pc;
-    pc.onicecandidate = e => { if(e.candidate&&ws) ws.send(JSON.stringify({type:'ice-candidate',target:remotePeerId,data:e.candidate})); };
-    pc.ondatachannel = e => setupDC(e.channel,remotePeerId);
-    if(initiator) {
-      const dc=pc.createDataChannel('ft');
-      setupDC(dc,remotePeerId);
-      const offer=await pc.createOffer(); await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({type:'offer',target:remotePeerId,data:offer}));
-    }
-    return pc;
-  }
-
-  let receivedBlobs = {};
-
-  function setupDC(dc,rpid) {
-    dc.binaryType='arraybuffer';
-    dataChannels[rpid]=dc;
-    dc.onopen = () => { showBeamActive(); updatePeerCount(); };
-    dc.onmessage = e => {
-      if(typeof e.data==='string') {
-        const m=JSON.parse(e.data);
-        if(m.type==='file-meta') {
-          incomingFiles[m.id]={name:m.name,size:m.size,received:0,chunks:[]};
-          addBeamFile(m.id,m.name,m.size,'↓');
-        } else if(m.type==='file-end') {
-          const f=incomingFiles[m.id]; if(!f) return;
-          const blob=new Blob(f.chunks);
-          receivedBlobs[m.id]={blob,name:f.name};
-          updateBeamFile(m.id,f.size,f.size,true);
-          delete incomingFiles[m.id];
-          toast(`Received: ${f.name}`,'success');
-        } else if(m.type==='text') {
-          addBeamText(m.id, m.content, '↓');
-          toast('Message received!','success');
-        }
-      } else {
-        const aid=Object.keys(incomingFiles).pop();
-        if(aid&&incomingFiles[aid]) {
-          const f=incomingFiles[aid]; f.chunks.push(e.data); f.received+=e.data.byteLength;
-          updateBeamFile(aid,f.received,f.size,false);
-        }
+      case 'answer': {
+        const link = links[msg.from], d = msg.data || {};
+        if (link && link.sid === d.sid && link.pc.signalingState === 'have-local-offer') await link.pc.setRemoteDescription(d.sdp);
+        break;
       }
-    };
+      case 'ice-candidate': {
+        const link = links[msg.from], d = msg.data || {};
+        if (link && link.sid === d.sid && d.candidate) await link.pc.addIceCandidate(d.candidate).catch(()=>{});
+        break;
+      }
+      case 'reconnect': {
+        // The other side lost its link to us and asks us (the offerer) to rebuild it
+        const link = links[msg.from];
+        if (iOffer(msg.from) && (!link || Date.now() - link.born > 5000)) {
+          dropLink(msg.from);
+          createLink(msg.from, randId(), true);
+        }
+        break;
+      }
+      case 'error':
+        toast(msg.message,'error');
+        if (!inRoom) leaveRoom(true);
+        break;
+    }
   }
 
-  function showBeamActive() { $('#beam-waiting').classList.add('hidden'); $('#beam-active').classList.remove('hidden'); }
-  function updatePeerCount(c) { $('#peer-count').textContent = `${c!==undefined?c:Object.keys(peers).length} peer(s)`; }
+  // The peer with the smaller id always makes the offer, so two peers never
+  // offer to each other at the same time
+  const iOffer = rid => myPeerId < rid;
+  const isUp = rid => !!(links[rid] && links[rid].dc && links[rid].dc.readyState === 'open');
+
+  // force: the peer has a fresh socket, so an offer in flight may never have arrived
+  function ensureLink(rid, force) {
+    if (rid === myPeerId || isUp(rid)) return;
+    const link = links[rid];
+    if (!force && link && Date.now() - link.born < 10000 && !['failed','closed'].includes(link.pc.connectionState)) return;
+    if (iOffer(rid)) { dropLink(rid); createLink(rid, randId(), true); }
+    else signal('reconnect', rid);
+  }
+
+  function createLink(rid, sid, offerer) {
+    const pc = new RTCPeerConnection({ iceServers: config.ice_servers || [] });
+    const link = { pc, sid, dc:null, born:Date.now(), opened:false, grace:null, timeout:null };
+    links[rid] = link;
+    const current = () => links[rid] === link;
+
+    pc.onicecandidate = e => { if (e.candidate && current()) signal('ice-candidate', rid, { sid, candidate:e.candidate }); };
+    pc.ondatachannel = e => { if (current()) setupDC(e.channel, rid, link); };
+    pc.onconnectionstatechange = () => {
+      if (!current()) return;
+      clearTimeout(link.grace);
+      const st = pc.connectionState;
+      if (st === 'failed' || st === 'closed') linkLost(rid);
+      // 'disconnected' often heals by itself (network blip, phone waking up)
+      else if (st === 'disconnected') link.grace = setTimeout(() => {
+        if (current() && pc.connectionState !== 'connected') linkLost(rid);
+      }, 8000);
+    };
+    // Give up on a negotiation that never completes (offer lost, peer gone)
+    link.timeout = setTimeout(() => { if (current() && !isUp(rid)) linkLost(rid); }, 20000);
+
+    if (offerer) {
+      setupDC(pc.createDataChannel('ft'), rid, link);
+      pc.createOffer()
+        .then(o => pc.setLocalDescription(o))
+        .then(() => { if (current()) signal('offer', rid, { sid, sdp:pc.localDescription }); })
+        .catch(() => { if (current()) linkLost(rid); });
+    }
+    return link;
+  }
+
+  function dropLink(rid) {
+    const link = links[rid];
+    if (!link) return;
+    delete links[rid];
+    clearTimeout(link.grace); clearTimeout(link.timeout);
+    try { if (link.dc) link.dc.close(); } catch {}
+    link.pc.close();
+  }
+
+  // A link died on its own. Rebuild it if the peer is still around.
+  function linkLost(rid) {
+    const wasOpen = links[rid] && links[rid].opened;
+    dropLink(rid);
+    failIncoming(rid);
+    refreshPeers();
+    if (roomPeers.has(rid) || !ws) {
+      if (wasOpen) toast('Connection dropped, reconnecting…','info');
+      setTimeout(() => { if (room && roomPeers.has(rid)) ensureLink(rid); }, 1000);
+    } else if (wasOpen) {
+      toast('Peer disconnected','info');
+    }
+  }
+
+  function setupDC(dc, rid, link) {
+    link.dc = dc;
+    dc.binaryType = 'arraybuffer';
+    dc.bufferedAmountLowThreshold = BUFFER_LOW;
+    dc.onopen = () => {
+      if (links[rid] !== link) return;
+      link.opened = true;
+      clearTimeout(link.timeout);
+      toast(seenPeers.has(rid) ? 'Peer reconnected' : 'Peer connected!','success');
+      seenPeers.add(rid);
+      refreshPeers();
+    };
+    dc.onclose = () => { if (links[rid] === link) linkLost(rid); };
+    dc.onmessage = e => { if (links[rid] === link) onData(rid, e.data); };
+  }
+
+  function refreshPeers() {
+    const n = Object.keys(links).filter(isUp).length;
+    const wasEmpty = $('#beam-active').classList.contains('hidden');
+    $('#peer-count').textContent = `${n} peer${n===1?'':'s'}`;
+    // Keep the history on screen during a reconnect
+    const showActive = n > 0 || $('#beam-history').children.length > 0;
+    $('#beam-active').classList.toggle('hidden', !showActive);
+    $('#beam-waiting').classList.toggle('hidden', n > 0);
+    $('#beam-waiting-text').textContent = seenPeers.size ? 'Reconnecting to peer…' : 'Waiting for peer...';
+    setRoomCardCollapsible(n > 0);
+    if (n > 0 && wasEmpty) setRoomCardCollapsed(true);
+  }
+
+  function onData(rid, data) {
+    if (typeof data !== 'string') {
+      const f = incoming[rid];
+      if (!f) return;
+      f.chunks.push(data); f.received += data.byteLength;
+      updateBeamFile(f.id, f.received, f.size, false);
+      return;
+    }
+    let m; try { m = JSON.parse(data); } catch { return; }
+    if (m.type === 'file-meta') {
+      failIncoming(rid);
+      incoming[rid] = { id:String(m.id), name:String(m.name), size:Number(m.size)||0, received:0, chunks:[] };
+      addBeamFile(incoming[rid].id, incoming[rid].name, incoming[rid].size, '↓');
+    } else if (m.type === 'file-end') {
+      const f = incoming[rid];
+      if (!f || f.id !== String(m.id)) return;
+      delete incoming[rid];
+      receivedBlobs[f.id] = { blob:new Blob(f.chunks), name:f.name };
+      updateBeamFile(f.id, f.size, f.size, true);
+      toast(`Received: ${f.name}`,'success');
+    } else if (m.type === 'text') {
+      addBeamText(String(m.id), String(m.content), '↓');
+      toast('Message received!','success');
+    }
+  }
+
+  function failIncoming(rid) {
+    const f = incoming[rid];
+    if (!f) return;
+    delete incoming[rid];
+    markFailed(f.id);
+  }
+
+  function markFailed(id) {
+    const el = document.getElementById(`beam-${id}`);
+    if (!el) return;
+    el.classList.add('failed');
+    const status = el.querySelector('.beam-file-status');
+    if (status) status.textContent = 'Interrupted, send it again';
+  }
+
+  const openChannels = () => Object.keys(links).filter(isUp).map(rid => links[rid].dc);
 
   // ─── P2P text send ──────────────────────────────────────────
   $('#beam-send-text').addEventListener('click', () => sendBeamText());
@@ -409,9 +624,9 @@
   function sendBeamText() {
     const text = $('#beam-text').value.trim();
     if (!text) return;
-    const chs = Object.values(dataChannels).filter(dc => dc.readyState === 'open');
+    const chs = openChannels();
     if (!chs.length) { toast('No peers connected', 'error'); return; }
-    const mid = Math.random().toString(36).slice(2, 10);
+    const mid = randId();
     chs.forEach(dc => dc.send(JSON.stringify({ type: 'text', id: mid, content: text })));
     addBeamText(mid, text, '↑');
     $('#beam-text').value = '';
@@ -427,23 +642,48 @@
   p2pDrop.addEventListener('drop', e => { if(e.dataTransfer.files.length) sendP2P(e.dataTransfer.files[0]); });
   p2pInput.addEventListener('change', () => { if(p2pInput.files.length) sendP2P(p2pInput.files[0]); p2pInput.value=''; });
 
+  // Files go out one at a time, so the receiver knows which file a chunk belongs to
   function sendP2P(file) {
-    const chs=Object.values(dataChannels).filter(dc=>dc.readyState==='open');
-    if(!chs.length){toast('No peers connected','error');return;}
-    const fid=Math.random().toString(36).slice(2,10);
-    chs.forEach(dc=>dc.send(JSON.stringify({type:'file-meta',id:fid,name:file.name,size:file.size})));
-    addBeamFile(fid,file.name,file.size,'↑');
-    const reader=new FileReader(); let off=0;
-    reader.onload = e => {
-      const chunk=e.target.result;
-      chs.forEach(dc=>dc.send(chunk));
-      off+=chunk.byteLength;
-      updateBeamFile(fid,off,file.size,false);
-      if(off<file.size) readSlice(off);
-      else { chs.forEach(dc=>dc.send(JSON.stringify({type:'file-end',id:fid}))); updateBeamFile(fid,file.size,file.size,true); toast(`Sent: ${file.name}`,'success'); }
-    };
-    function readSlice(o){reader.readAsArrayBuffer(file.slice(o,o+CHUNK));}
-    readSlice(0);
+    if (!openChannels().length) { toast('No peers connected','error'); return; }
+    const fid = randId();
+    addBeamFile(fid, file.name, file.size, '↑');
+    sendQueue.push({ fid, file });
+    if (!sending) pumpQueue();
+  }
+
+  async function pumpQueue() {
+    sending = true;
+    while (sendQueue.length) {
+      const { fid, file } = sendQueue.shift();
+      try { await sendFile(fid, file); }
+      catch { markFailed(fid); }
+    }
+    sending = false;
+  }
+
+  // Wait until the channel's send buffer has room. Sending without waiting
+  // overfills it on big files and Chrome errors out or drops the channel.
+  const drain = dc => dc.bufferedAmount <= BUFFER_HIGH ? null : new Promise(res => {
+    const done = () => { dc.removeEventListener('bufferedamountlow', done); dc.removeEventListener('close', done); res(); };
+    dc.addEventListener('bufferedamountlow', done);
+    dc.addEventListener('close', done);
+  });
+
+  async function sendFile(fid, file) {
+    let chs = openChannels();
+    if (!chs.length) throw new Error('No peers');
+    chs.forEach(dc => dc.send(JSON.stringify({ type:'file-meta', id:fid, name:file.name, size:file.size })));
+    for (let off = 0; off < file.size; off += CHUNK) {
+      const chunk = await file.slice(off, off + CHUNK).arrayBuffer();
+      await Promise.all(chs.map(drain));
+      chs = chs.filter(dc => dc.readyState === 'open');
+      if (!chs.length) throw new Error('Peers gone');
+      chs.forEach(dc => dc.send(chunk));
+      updateBeamFile(fid, Math.min(off + CHUNK, file.size), file.size, false);
+    }
+    chs.forEach(dc => dc.send(JSON.stringify({ type:'file-end', id:fid })));
+    updateBeamFile(fid, file.size, file.size, true);
+    toast(`Sent: ${file.name}`,'success');
   }
 
   // ─── Beam history (text + file items) ─────────────────────
@@ -484,8 +724,8 @@
   }
 
   function updateBeamFile(id, loaded, total, done) {
-    const el = $(`#beam-${id}`); if (!el) return;
-    const pct = Math.round(loaded / total * 100);
+    const el = document.getElementById(`beam-${id}`); if (!el) return;
+    const pct = total ? Math.round(loaded / total * 100) : 100;
     const fill = el.querySelector('.beam-file-progress-fill');
     const status = el.querySelector('.beam-file-status');
     if (fill) fill.style.width = pct + '%';

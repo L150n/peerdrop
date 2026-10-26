@@ -479,6 +479,7 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   font-size:0.7rem; color: var(--text-secondary); font-weight:500;
 }
 .badge-success { background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.3); color: var(--accent-success); }
+.badge-warning { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#f59e0b; }
 
 /* ─── Progress ──────────────────────────────────────────────── */
 .progress-bar { height:3px; background: var(--bg-input); border-radius: var(--radius-full); margin-top:0.75rem; overflow:hidden; }
@@ -761,6 +762,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 }
 .beam-file-status { font-size:0.65rem; color: var(--text-muted); }
 .beam-item.complete .beam-file-status { color: var(--accent-success); }
+.beam-item.failed { border-left-color:var(--accent-danger); }
+.beam-item.failed .beam-file-status { color: var(--accent-danger); }
 
 /* ─── Toast ─────────────────────────────────────────────────── */
 #toast-container {

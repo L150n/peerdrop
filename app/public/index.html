@@ -158,7 +158,7 @@
 
         <div id="beam-room" class="hidden">
           <div class="room-header">
-            <span class="badge badge-success">Connected</span>
+            <span class="badge badge-success" id="beam-status">Connected</span>
             <span class="badge" id="peer-count">0 peers</span>
             <button class="btn btn-sm btn-danger" id="leave-room">Leave</button>
           </div>
@@ -194,7 +194,7 @@
           <!-- Waiting -->
           <div id="beam-waiting" class="beam-waiting">
             <div class="spinner"></div>
-            <p>Waiting for peer...</p>
+            <p id="beam-waiting-text">Waiting for peer...</p>
           </div>
 
           <!-- Active -->
