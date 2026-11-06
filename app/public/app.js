@@ -77,7 +77,7 @@
   function makeQR(element, text, size=100) {
     element.innerHTML = '';
     if (typeof QRCode === 'undefined') return;
-    new QRCode(element, { text, width:size, height:size, colorDark:'#0e2a33', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+    new QRCode(element, { text, width:size, height:size, colorDark:'#16191b', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
   }
 
   function copyText(text, done='Copied') {
